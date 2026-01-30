@@ -4,7 +4,7 @@ Raw data and code supporting the Dual Coding Region publication (DOI TBD).
 
 ## Data
 
-The `Data` directory contains the essential raw UniprotKB/SwissProt mapping of human protein isoforms performed wit MIRAGE2 on the human reference genome hg38.p14 as well as supplementary pre-formatted data and metadata required to reproduce the analyses presented in the paper.
+The `Data/` directory contains the essential raw UniprotKB/Swiss-Prot mapping of human protein isoforms performed wit [`MIRAGE2`](https://github.com/TravisWheelerLab/Mirage) on the human reference genome [`hg38.p14`](https://hgdownload.gi.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz) as well as supplementary pre-formatted data and metadata required to reproduce the analyses presented in the paper.
 
 | Filename | Description |
 | -------- | ----------- |
@@ -19,7 +19,7 @@ The `Data` directory contains the essential raw UniprotKB/SwissProt mapping of h
 
 ## Code
 
-The code is organized in 4 main sections with the main pipeline scripts located in the top directory level and dependent scripts in their respective sub-directories.
+The `Code/` directory is organized in 4 main sections. The main pipeline scripts are located in the top level and dependent scripts in their respective sub-directories.
 
 | Filename | Description |
 | -------- | ----------- |
@@ -37,3 +37,7 @@ The code is organized in 4 main sections with the main pipeline scripts located 
 | `04_Peptide_function/06_parse_dssp.sh` | Format DSSP structures |
 |`04_Peptide_function/07_plot_AF3_DCR_plddts.R` | Figure 6 |
 
+
+## Questions/Requests
+
+Questions and requests can be send through the [issue tab](https://github.com/TravisWheelerLab/DCR-project/issues), or via email using the address for correspondence listed on the publication (DOI TBD)
