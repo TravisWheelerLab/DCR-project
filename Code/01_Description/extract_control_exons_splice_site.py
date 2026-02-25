@@ -4,7 +4,7 @@ import sys
 
 # Input and output filenames
 input_bed = "output/01_Description/UniprotKB_isoforms_mapping.bed"
-output_bed = "output/01_Description/EXPERIMENTAL_control_splice_sites.bed"
+output_bed = "output/01_Description/SPLICE_SITES_control_splice_sites.bed"
 
 # Optional reproducibility
 random.seed(42)

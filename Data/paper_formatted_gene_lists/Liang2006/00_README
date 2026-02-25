@@ -1,0 +1,11 @@
+00_README <- this file
+Liang2006_INCOMPLETE_.uniq.txt <- list to use ***
+Liang2006_INCOMPLETE_hgnc-symbol-check.csv <- Gene symbol update
+Liang2006_Refseq_CONVERT_FAILED.txt <- RefSeq mRNA ID that could not be converted to gene symbol
+Liang2006_Refseq_conversion.tsv <- RefSeq to Gene symbol convertion; combines both ARF and ORF columns of OG file = LiangLandweber_Supplementary3.xls
+
+-------
+
+commands for formatting:
+sed 's/,/\t/g;s/"//g' Liang2006_INCOMPLETE_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {print $3}' | sed '/^$/d' | sort | uniq > Liang2006_INCOMPLETE_.uniq.txt
+awk 'NF == 1 {print $0}' Liang2006_NM_conversion.tsv > Liang2006_NM_CONVERT_FAILED.txt

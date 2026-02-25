@@ -16,7 +16,7 @@ debug = args.debug
 
 ### import data and initialize variables ##########################################################
 
-DCR              = pd.read_csv("output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed", sep = "\t", header=None)
+DCR              = pd.read_csv("output/01_Description/filtered_DCR_overlapping_regions_with_gene_and_dceID.bed", sep = "\t", header=None)
 DCR.columns      = ["chr", "start", "end", "DCRindex", "strand", "gene", "frame"]
 isoforms         = pd.read_csv("output/01_Description/UniprotKB_isoforms_mapping_forNMD_noAmbiguous.bed", sep = "\t", header=None)
 isoforms.columns = ["chr", "start", "end", "isoform", "strand", "gene"]

@@ -6,148 +6,121 @@ library(ggpubr)
 library(rstatix)
 
 # input
-PP30=read.table("output/02_Conservation/DCEvsNonDCE.meanPhyloP30.out")
-PP100=read.table("~/Google Drive/My Drive/Wheeler_Lab/2025/06-17_DCR_pipeline/DCR-pipeline/output/02_Conservation/DCEvsNonDCE.meanPhyloP100.out")
+PP100=read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/02_Conservation/DCEvsNonDCE.meanPhyloP100.out")
 headerPP<-c("exon", "mean_PhyloP", "type", "len")
-names(PP30)<-headerPP
 names(PP100)<-headerPP
 # restrict to DCR exons length values
 PPminL<-min(PP100[PP100$type == "DCE_exon",]$len)
 PPmaxL<-max(PP100[PP100$type == "DCE_exon",]$len)
-PP30L<-PP30[PP30$len >= PPminL & PP30$len <= PPmaxL,]
 PP100L<-PP100[PP100$len >= PPminL & PP100$len <= PPmaxL,]
 
-# slice the data
-PP30L$bin<-cut(PP30L$len, breaks = seq(from = 20, to = PPmaxL, by = 3),
-              labels = seq(from = 21.5, to = PPmaxL-1.5, by = 3))
-PP30L %>% group_by(bin, type) %>% summarize(
-  meanPP = mean(na.omit(as.numeric(mean_PhyloP))),
-  binSize = length(len),
-) -> PP30Lstat
-# order factor levels
-#typelevels<-
-PP30Lstat$type<-factor(PP30Lstat$type, levels = rev(c("nDCE_exon_nDCE_gene", "nDCE_exon_DCE_gene", "DCE_exon")),
-                       labels = c("DCR exon", "non-DCR exon, DCR gene", "non-DCR exon, non-DCR gene"))
-# plot
-plot30PP<-ggplot(PP30Lstat[order(PP30Lstat$type, decreasing = T),], aes(x = as.numeric(as.character(bin)), y = meanPP, col = type))+
-  geom_point()+
-  geom_xsidedensity(aes(y = after_stat(density), fill = type), alpha = 0.3) +
-  geom_ysidedensity(aes(x = after_stat(density), fill = type), alpha = 0.3) +
-  scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  scale_x_log10()+
-  xlab("exon length bin (midpoint, bin size = 3bp)")+
-  ylab("average exon-level PhyloP score")+
-  ggtitle("PhyloP 30-ways (Primates)")+
-  theme_classic()
-
-# slice the data
-PP100L$bin<-as.numeric(as.character(cut(PP100L$len, breaks = seq(from = 20, to = PPmaxL, by = 3),
-                                        labels = seq(from = 21.5, to = PPmaxL-1.5, by = 3))))
-#as.numeric(as.character(cut(PP100L$len, breaks = seq(from = 20, to = PPmaxL, by = 3),
-#                            labels = seq(from = 21.5, to = PPmaxL-1.5, by = 3))))
-# resampling to match DCR distribution
-table(PP100L$type)
-PP100L[PP100L$type == "DCE_exon",] %>% group_by(bin) %>%
-  summarize(DCRcount = length(bin)) -> count_per_bin
-# initialize sampling dfs
-s_nDnDG_df <- data.frame(exon = character(),
-                 mean_PhyloP=character(), 
-                 type=character(),
-                 len=numeric(),
-                 bin=numeric()) 
-s_nDDG_df <- data.frame(exon = character(),
-                         mean_PhyloP=character(), 
-                         type=character(),
-                         len=numeric(),
-                         bin=numeric()) 
-for(i in 1:length(count_per_bin$bin)){
-bintodo <- count_per_bin[i,1]
-sample_size <- as.numeric(count_per_bin[i,2])
-
-# sample nDCE_exon_nDCE_gene
-sliced_nDnDG_df<-PP100L %>% filter(type == "nDCE_exon_nDCE_gene",
-                                   bin == as.numeric(bintodo))
-nDnDG_L <- length(sliced_nDnDG_df$exon)
-sSize <- min(nDnDG_L, sample_size)
-sampled_nDnDG<-sliced_nDnDG_df[sample(1:nDnDG_L, as.numeric(sSize), replace = F),]
-s_nDnDG_df<-rbind(s_nDnDG_df, sampled_nDnDG)
-
-# sample nDCE_exon_DCE_gene
-sliced_nDDG_df<-PP100L %>% filter(type == "nDCE_exon_DCE_gene",
-                                   bin == as.numeric(bintodo))
-nDDG_L <- length(sliced_nDDG_df$exon)
-sSize <- min(nDDG_L, sample_size)
-sampled_nDDG<-sliced_nDDG_df[sample(1:nDDG_L, as.numeric(sSize), replace = F),]
-s_nDDG_df<-rbind(s_nDDG_df, sampled_nDDG)
-}
-
-PP100Ls <- rbind(PP100L[PP100L$type == "DCE_exon",], s_nDnDG_df, s_nDDG_df)
-#table(is.na(PP100Ls$mean_PhyloP))
-
-
-PP100Ls <- PP100Ls %>%
-  mutate(
-    type = factor(type, levels = c("DCE_exon","nDCE_exon_DCE_gene","nDCE_exon_nDCE_gene")),
-    mean_PhyloP = as.numeric(as.character(mean_PhyloP))
-  ) %>%
-  filter(!is.na(mean_PhyloP),
-         !is.na(bin))
-
-PPmain<-ggplot(PP100Ls[order(PP100Ls$type, decreasing = T),])+
-  geom_point(aes(x = len, y = mean_PhyloP, col = type), 
-             alpha = 0.3)+
-  scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  xlab("Exon length")+
-  ylab("PhyloP score (100-Ways)")+
-  coord_cartesian(ylim = c(-2.5,10))+
-  scale_x_log10()+
-  theme_classic()+
-  theme(legend.position = "inside",
-        legend.position.inside = c(0.75, 0.85))
-
-# Add p-values for pairwise comparisons
-# Define the comparisons to be made
-my_comparisons <- list(
-  c("DCE_exon", "nDCE_exon_DCE_gene"),
-  c("DCE_exon", "nDCE_exon_nDCE_gene"),
-  c("nDCE_exon_DCE_gene", "nDCE_exon_nDCE_gene")
-)
-
-PP100Ls %>% t_test(mean_PhyloP ~ type) -> stat.test
-stat.test <- stat.test %>% add_xy_position(x = "type")
-
-PPboxplot<-ggplot(PP100Ls, aes(x = type, y = mean_PhyloP))+
-  geom_boxplot(aes(col = type, fill = type), alpha = 0.3, notch = T, show.legend = F)+
-  scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  stat_pvalue_manual(stat.test, label = "p.adj.signif", tip.length = 0.01, y.position = c(8.5, 9, 9.5))+
-  coord_cartesian(ylim = c(-2.5,10))+
-  theme_classic()+
-  theme(axis.title.y = element_blank(),
-        axis.line.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.x = element_blank(),
-        axis.line.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank())
-
-PPdensity<-ggplot(PP100Ls[order(PP100Ls$type, decreasing = T),])+
-  geom_density(aes(x = len, col = type, fill = type), 
-             alpha = 0.5, show.legend = F)+
-  scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  scale_x_log10()+
-  theme_classic()+
-  theme(axis.title.x = element_blank(),
-        axis.line.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank())
-
-cowplot::plot_grid(PPdensity, NULL, PPmain, PPboxplot,
-                   ncol = 2, axis = "b", align = "h", rel_heights = c(0.2, 0.8),
-                   rel_widths = c(0.8, 0.2))
+# # slice the data
+# PP100L$bin<-as.numeric(as.character(cut(PP100L$len, breaks = seq(from = 20, to = PPmaxL, by = 3),
+#                                         labels = seq(from = 21.5, to = PPmaxL-1.5, by = 3))))
+# #as.numeric(as.character(cut(PP100L$len, breaks = seq(from = 20, to = PPmaxL, by = 3),
+# #                            labels = seq(from = 21.5, to = PPmaxL-1.5, by = 3))))
+# # resampling to match DCR distribution
+# table(PP100L$type)
+# PP100L[PP100L$type == "DCE_exon",] %>% group_by(bin) %>%
+#   summarize(DCRcount = length(bin)) -> count_per_bin
+# # initialize sampling dfs
+# s_nDnDG_df <- data.frame(exon = character(),
+#                  mean_PhyloP=character(), 
+#                  type=character(),
+#                  len=numeric(),
+#                  bin=numeric()) 
+# s_nDDG_df <- data.frame(exon = character(),
+#                          mean_PhyloP=character(), 
+#                          type=character(),
+#                          len=numeric(),
+#                          bin=numeric()) 
+# for(i in 1:length(count_per_bin$bin)){
+# bintodo <- count_per_bin[i,1]
+# sample_size <- as.numeric(count_per_bin[i,2])
+# 
+# # sample nDCE_exon_nDCE_gene
+# sliced_nDnDG_df<-PP100L %>% filter(type == "nDCE_exon_nDCE_gene",
+#                                    bin == as.numeric(bintodo))
+# nDnDG_L <- length(sliced_nDnDG_df$exon)
+# sSize <- min(nDnDG_L, sample_size)
+# sampled_nDnDG<-sliced_nDnDG_df[sample(1:nDnDG_L, as.numeric(sSize), replace = F),]
+# s_nDnDG_df<-rbind(s_nDnDG_df, sampled_nDnDG)
+# 
+# # sample nDCE_exon_DCE_gene
+# sliced_nDDG_df<-PP100L %>% filter(type == "nDCE_exon_DCE_gene",
+#                                    bin == as.numeric(bintodo))
+# nDDG_L <- length(sliced_nDDG_df$exon)
+# sSize <- min(nDDG_L, sample_size)
+# sampled_nDDG<-sliced_nDDG_df[sample(1:nDDG_L, as.numeric(sSize), replace = F),]
+# s_nDDG_df<-rbind(s_nDDG_df, sampled_nDDG)
+# }
+# 
+# PP100Ls <- rbind(PP100L[PP100L$type == "DCE_exon",], s_nDnDG_df, s_nDDG_df)
+# #table(is.na(PP100Ls$mean_PhyloP))
+# 
+# 
+# PP100Ls <- PP100Ls %>%
+#   mutate(
+#     type = factor(type, levels = c("DCE_exon","nDCE_exon_DCE_gene","nDCE_exon_nDCE_gene")),
+#     mean_PhyloP = as.numeric(as.character(mean_PhyloP))
+#   ) %>%
+#   filter(!is.na(mean_PhyloP),
+#          !is.na(bin))
+# 
+# PPmain<-ggplot(PP100Ls[order(PP100Ls$type, decreasing = T),])+
+#   geom_point(aes(x = len, y = mean_PhyloP, col = type), 
+#              alpha = 0.3)+
+#   scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   xlab("Exon length")+
+#   ylab("PhyloP score (100-Ways)")+
+#   coord_cartesian(ylim = c(-2.5,10))+
+#   scale_x_log10()+
+#   theme_classic()+
+#   theme(legend.position = "inside",
+#         legend.position.inside = c(0.75, 0.85))
+# 
+# # Add p-values for pairwise comparisons
+# # Define the comparisons to be made
+# my_comparisons <- list(
+#   c("DCE_exon", "nDCE_exon_DCE_gene"),
+#   c("DCE_exon", "nDCE_exon_nDCE_gene"),
+#   c("nDCE_exon_DCE_gene", "nDCE_exon_nDCE_gene")
+# )
+# 
+# PP100Ls %>% t_test(mean_PhyloP ~ type) -> stat.test
+# stat.test <- stat.test %>% add_xy_position(x = "type")
+# 
+# PPboxplot<-ggplot(PP100Ls, aes(x = type, y = mean_PhyloP))+
+#   geom_boxplot(aes(col = type, fill = type), alpha = 0.3, notch = T, show.legend = F)+
+#   scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   stat_pvalue_manual(stat.test, label = "p.adj.signif", tip.length = 0.01, y.position = c(8.5, 9, 9.5))+
+#   coord_cartesian(ylim = c(-2.5,10))+
+#   theme_classic()+
+#   theme(axis.title.y = element_blank(),
+#         axis.line.y = element_blank(),
+#         axis.ticks.y = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.line.x = element_blank(),
+#         axis.ticks.x = element_blank(),
+#         axis.text.x = element_blank())
+# 
+# PPdensity<-ggplot(PP100Ls[order(PP100Ls$type, decreasing = T),])+
+#   geom_density(aes(x = len, col = type, fill = type), 
+#              alpha = 0.5, show.legend = F)+
+#   scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   scale_x_log10()+
+#   theme_classic()+
+#   theme(axis.title.x = element_blank(),
+#         axis.line.x = element_blank(),
+#         axis.ticks.x = element_blank(),
+#         axis.text.x = element_blank())
+# 
+# cowplot::plot_grid(PPdensity, NULL, PPmain, PPboxplot,
+#                    ncol = 2, axis = "b", align = "h", rel_heights = c(0.2, 0.8),
+#                    rel_widths = c(0.8, 0.2))
 
 
 ### function version
@@ -297,7 +270,7 @@ plot_len_conservation <- function(
 
 
 Plot100W<-plot_len_conservation(PP100L, 100)
-Plot30W<-plot_len_conservation(PP30L, 30)
+
 
 
 
@@ -310,43 +283,43 @@ Plot30W<-plot_len_conservation(PP30L, 30)
 
 
 ### see if we keep that 
-
-PP100Ls %>% group_by(bin, type) %>% summarize(
-  meanPP = mean(na.omit(as.numeric(mean_PhyloP))),
-  binSize = length(len),
-) -> PP100Lstat
-
-
-# order factor levels
-#typelevels<-
-PP100Lstat$type<-factor(PP100Lstat$type, levels = rev(c("nDCE_exon_nDCE_gene", "nDCE_exon_DCE_gene", "DCE_exon")),
-                        labels = c("DCR exon", "non-DCR exon, DCR gene", "non-DCR exon, non-DCR gene"))
-# plot
-sidebp<-ggplot(PP100Lstat[order(PP100Lstat$type, decreasing = T),], aes(x = type, y = meanPP, col = type))+
-  geom_boxplot(aes(fill = type), notch = T, col = "black")+
-  #scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  theme_classic()
-
-ggplot(PP100Lstat[order(PP100Lstat$type, decreasing = T),])+
-  geom_density(aes(x = as.numeric(as.character(bin)), y = meanPP, col = type, group = type))
-
-plot100PP<-ggplot(PP100Lstat[order(PP100Lstat$type, decreasing = T),], 
-                  aes(x = as.numeric(as.character(bin)), y = meanPP, col = type))+
-  geom_point()+
-  #geom_xsidedensity(aes(y = after_stat(density), fill = type), alpha = 0.3) +
-  #geom_ysidedensity(aes(x = after_stat(density), fill = type), alpha = 0.3) +
-  scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
-  scale_x_log10()+
-  xlab("exon length bin (midpoint, bin size = 3bp)")+
-  ylab("average exon-level PhyloP score")+
-  #ggtitle("PhyloP 100-ways (Vertebrates)")+
-  theme_classic()#+
-  #theme(legend.position = "inside",legend.position.inside = c(0.12,0.18))
-
-cowplot::plot_grid(plot100PP, sidebp, nrow = 1, axis = "b", align = "h")
-
-
-cowplot::plot_grid(plot30PP, plot100PP, nrow = 2)
-ggsave("output/02_Conservation/Figure2B_PhyloP100-30_distros.pdf", width = 16, height = 9)
+# 
+# PP100Ls %>% group_by(bin, type) %>% summarize(
+#   meanPP = mean(na.omit(as.numeric(mean_PhyloP))),
+#   binSize = length(len),
+# ) -> PP100Lstat
+# 
+# 
+# # order factor levels
+# #typelevels<-
+# PP100Lstat$type<-factor(PP100Lstat$type, levels = rev(c("nDCE_exon_nDCE_gene", "nDCE_exon_DCE_gene", "DCE_exon")),
+#                         labels = c("DCR exon", "non-DCR exon, DCR gene", "non-DCR exon, non-DCR gene"))
+# # plot
+# sidebp<-ggplot(PP100Lstat[order(PP100Lstat$type, decreasing = T),], aes(x = type, y = meanPP, col = type))+
+#   geom_boxplot(aes(fill = type), notch = T, col = "black")+
+#   #scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   theme_classic()
+# 
+# ggplot(PP100Lstat[order(PP100Lstat$type, decreasing = T),])+
+#   geom_density(aes(x = as.numeric(as.character(bin)), y = meanPP, col = type, group = type))
+# 
+# plot100PP<-ggplot(PP100Lstat[order(PP100Lstat$type, decreasing = T),], 
+#                   aes(x = as.numeric(as.character(bin)), y = meanPP, col = type))+
+#   geom_point()+
+#   #geom_xsidedensity(aes(y = after_stat(density), fill = type), alpha = 0.3) +
+#   #geom_ysidedensity(aes(x = after_stat(density), fill = type), alpha = 0.3) +
+#   scale_color_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   scale_fill_manual(values = c("#FFA800", "#FFF0BD" , "grey80"))+
+#   scale_x_log10()+
+#   xlab("exon length bin (midpoint, bin size = 3bp)")+
+#   ylab("average exon-level PhyloP score")+
+#   #ggtitle("PhyloP 100-ways (Vertebrates)")+
+#   theme_classic()#+
+#   #theme(legend.position = "inside",legend.position.inside = c(0.12,0.18))
+# 
+# cowplot::plot_grid(plot100PP, sidebp, nrow = 1, axis = "b", align = "h")
+# 
+# 
+# cowplot::plot_grid(plot30PP, plot100PP, nrow = 2)
+# ggsave("output/02_Conservation/Figure2B_PhyloP100-30_distros.pdf", width = 16, height = 9)

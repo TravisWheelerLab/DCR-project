@@ -8,14 +8,20 @@ We refine LW/RW connection categories using:
   - Exon identity (from lowercase flank of window, as before)
   - DCR edge identity via uppercase block edges (prefix/suffix up to 16 bp)
 
-New refined statuses (same labels as before, but edges instead of junctions):
-  - Connected-shared                  (same exon + same EDGE across frames)
-  - Connected-distinct-same-exon      (same exon + different EDGE)
-  - Connected-distinct-diff-exon      (different exon)
+New refined statuses use DCR-level boundary type combined with per-row exon comparison:
+  - Connected-same-boundary-same-exon      (DCR boundary is same + this row's exon matches another frame)
+  - Connected-same-boundary-diff-exon      (DCR boundary is same + this row's exon differs from all others)
+  - Connected-different-boundary-same-exon (DCR boundary is distinct + this row's exon matches another frame)
+  - Connected-different-boundary-diff-exon (DCR boundary is distinct + this row's exon differs from all others)
 
-Terminals (N-Terminal / C-Terminal) are preserved as-is.
+Terminal categories are refined in the UpSet output to be mutually exclusive:
+  - N-Terminal-all / C-Terminal-all:     ALL frames are terminal on that side
+  - N-Terminal-mixed / C-Terminal-mixed: at least one frame is terminal AND at least one connects to an exon
 
-Also emits L/R edge tokens and per-row edge sharing status vs other frames.
+DCR-level boundary types:
+  - L_boundary_type: "same" if all connected frames share the same L_edge_token, "distinct" otherwise
+  - R_boundary_type: "same" if all connected frames share the same R_edge_token, "distinct" otherwise
+These indicate whether the DCR has "blunt" (same) or "cohesive" (distinct) ends.
 
 INPUT
 -----
@@ -116,29 +122,68 @@ def edge_token_from_window(window: str, end: str, k: int = EDGE_K) -> str | None
         n = min(k, len(u))
         return u[-n:]
 
-def refined_status_from_exon_and_edge(orig_status, exon_token, edge_token,
-                                      other_exons, other_edges):
+def refined_status_from_exon_and_boundary(orig_status, exon_token, boundary_type, other_exons):
     """
-    Decide refined 'Connected-*' label using exon (same/diff) and edge (shared/distinct).
-    Terminals kept as-is.
-    If exon/edge token missing or no other frames present, fall back to original status.
+    Decide refined 'Connected-*' label using DCR-level boundary type and per-row exon comparison.
+
+    Args:
+        orig_status: Original LW/RW status from input
+        exon_token: This row's exon token (lowercase portion)
+        boundary_type: DCR-level boundary type ("same", "distinct", or "NA")
+        other_exons: Set of exon tokens from other frames in this DCR
+
+    Returns:
+        Refined status label combining boundary type and exon comparison
     """
     if is_terminal(orig_status):
         return orig_status
-    if exon_token is None or edge_token is None:
+    if exon_token is None:
         return orig_status
-    if not other_exons and not other_edges:
+    if boundary_type == "NA":
+        return orig_status
+    if not other_exons:
+        # Only one connected frame, can't compare exons
         return orig_status
 
     same_exon = exon_token in other_exons
-    same_edge = edge_token in other_edges
 
-    if same_exon and same_edge:
-        return "Connected-shared"
-    elif same_exon and not same_edge:
-        return "Connected-distinct-same-exon"
+    if boundary_type == "same":
+        if same_exon:
+            return "Connected-same-boundary-same-exon"
+        else:
+            return "Connected-same-boundary-diff-exon"
+    else:  # boundary_type == "distinct"
+        if same_exon:
+            return "Connected-different-boundary-same-exon"
+        else:
+            return "Connected-different-boundary-diff-exon"
+
+
+def compute_boundary_type(edge_tokens: list) -> str:
+    """
+    Compute DCR-level boundary type from a list of edge tokens.
+
+    Args:
+        edge_tokens: List of edge tokens from all frames (may include None for terminals)
+
+    Returns:
+        "same" if all non-None tokens are identical (blunt end)
+        "distinct" if multiple different non-None tokens exist (cohesive end)
+        "NA" if no connected frames (all terminals)
+    """
+    # Filter out None values (from terminal rows)
+    valid_tokens = [t for t in edge_tokens if t is not None]
+
+    if not valid_tokens:
+        return "NA"
+
+    unique_tokens = set(valid_tokens)
+
+    if len(unique_tokens) == 1:
+        return "same"
     else:
-        return "Connected-distinct-diff-exon"
+        return "distinct"
+
 
 def main():
     args = parse_args()
@@ -154,6 +199,9 @@ def main():
     Ltok_list, Rtok_list = [], []
     Lstat_list, Rstat_list = [], []
 
+    # Store DCR-level boundary types (computed per Index, then broadcast to rows)
+    dcr_boundary_types = {}  # {Index: (L_boundary_type, R_boundary_type)}
+
     # Process per Index (DCR) to compare across frames
     for idx_val, sub in df.groupby("Index", sort=False):
         # Precompute tokens for the group
@@ -163,22 +211,29 @@ def main():
         sub["L_edge_token"] = sub["LeftWindow"].apply(lambda x: edge_token_from_window(x, "LW", EDGE_K))
         sub["R_edge_token"] = sub["RightWindow"].apply(lambda x: edge_token_from_window(x, "RW", EDGE_K))
 
+        # Compute DCR-level boundary types FIRST (needed for classification)
+        all_L_edges = list(sub["L_edge_token"])
+        all_R_edges = list(sub["R_edge_token"])
+        L_btype = compute_boundary_type(all_L_edges)
+        R_btype = compute_boundary_type(all_R_edges)
+        dcr_boundary_types[idx_val] = (L_btype, R_btype)
+
         for i, row in sub.iterrows():
             frame = row["Frames"]
 
-            # Other frames' tokens (non-terminal only)
+            # Other frames' exon tokens (non-terminal only)
             others = sub[sub["Frames"] != frame]
             other_lw_exons = set(t for t in others["lw_exon"] if t is not None)
             other_rw_exons = set(t for t in others["rw_exon"] if t is not None)
             other_L_edges = set(t for t in others["L_edge_token"] if t is not None)
             other_R_edges = set(t for t in others["R_edge_token"] if t is not None)
 
-            # Decide refined LW/RW statuses using exon + EDGE
-            lw_refined = refined_status_from_exon_and_edge(
-                row["LW"], row["lw_exon"], row["L_edge_token"], other_lw_exons, other_L_edges
+            # Decide refined LW/RW statuses using DCR-level boundary type + per-row exon comparison
+            lw_refined = refined_status_from_exon_and_boundary(
+                row["LW"], row["lw_exon"], L_btype, other_lw_exons
             )
-            rw_refined = refined_status_from_exon_and_edge(
-                row["RW"], row["rw_exon"], row["R_edge_token"], other_rw_exons, other_R_edges
+            rw_refined = refined_status_from_exon_and_boundary(
+                row["RW"], row["rw_exon"], R_btype, other_rw_exons
             )
 
             # Edge-only shared/distinct flags (helpful for QA)
@@ -206,6 +261,10 @@ def main():
     df["L_edge_status"] = Lstat_list
     df["R_edge_status"] = Rstat_list
 
+    # Add DCR-level boundary types (broadcast to all rows of same Index)
+    df["L_boundary_type"] = df["Index"].map(lambda x: dcr_boundary_types[x][0])
+    df["R_boundary_type"] = df["Index"].map(lambda x: dcr_boundary_types[x][1])
+
     # Save detailed
     df.to_csv(args.out_detailed, sep="\t", index=False)
 
@@ -216,6 +275,72 @@ def main():
         per_index_patterns[i].add(f"LW:{row['LW_status_new']}")
         per_index_patterns[i].add(f"RW:{row['RW_status_new']}")
 
+    # Refine terminal categories to be mutually exclusive:
+    # - "all": ALL frames are terminal on that side
+    # - "mixed": at least one frame is terminal AND at least one connects to an exon
+    # Also remove plain "Connected" patterns when redundant
+    for i, pats in per_index_patterns.items():
+        # Check LW (N-Terminal) status
+        if "LW:N-Terminal" in pats:
+            has_lw_connected = any(p.startswith("LW:Connected") for p in pats)
+            pats.discard("LW:N-Terminal")
+            if has_lw_connected:
+                pats.add("LW:N-Terminal-mixed")
+                # Remove plain "Connected" - it's redundant with N-Terminal-mixed
+                pats.discard("LW:Connected")
+            else:
+                pats.add("LW:N-Terminal-all")
+
+        # Check RW (C-Terminal) status
+        if "RW:C-Terminal" in pats:
+            has_rw_connected = any(p.startswith("RW:Connected") for p in pats)
+            pats.discard("RW:C-Terminal")
+            if has_rw_connected:
+                pats.add("RW:C-Terminal-mixed")
+                # Remove plain "Connected" - it's redundant with C-Terminal-mixed
+                pats.discard("RW:Connected")
+            else:
+                pats.add("RW:C-Terminal-all")
+
+        # Remove plain "Connected" if there are specific "Connected-*" categories
+        # (plain Connected only appears when a frame has Insufficient_Nucls and can't be classified)
+        has_lw_specific = any(p.startswith("LW:Connected-") for p in pats)
+        has_rw_specific = any(p.startswith("RW:Connected-") for p in pats)
+        if has_lw_specific:
+            pats.discard("LW:Connected")
+        if has_rw_specific:
+            pats.discard("RW:Connected")
+
+    # Hardcode edge cases where Insufficient_Nucls prevented classification
+    # but manual inspection shows they fit existing categories
+    # Format: {index: {pattern_to_remove: [patterns_to_add], ...}}
+    edge_case_fixes = {
+        "1061": {
+            "LW:Connected": ["LW:Connected-same-boundary-diff-exon"],
+        },
+        "1340": {
+            "LW:Connected": ["LW:Connected-same-boundary-diff-exon"],
+        },
+        "1488": {
+            "RW:Connected": ["RW:Connected-same-boundary-same-exon"],
+        },
+        "933": {
+            "LW:Connected-different-boundary-diff-exon": [
+                "LW:Connected-same-boundary-diff-exon",
+            ],
+            "RW:Connected": [
+                "RW:Connected-same-boundary-diff-exon",
+            ],
+        },
+    }
+    for idx, fixes in edge_case_fixes.items():
+        if idx in per_index_patterns:
+            for old_pat, new_pats in fixes.items():
+                if old_pat in per_index_patterns[idx]:
+                    per_index_patterns[idx].discard(old_pat)
+                    for new_pat in new_pats:
+                        per_index_patterns[idx].add(new_pat)
+
     all_cols = sorted({p for pats in per_index_patterns.values() for p in pats})
     freq = Counter()
     for pats in per_index_patterns.values():
@@ -225,7 +350,10 @@ def main():
 
     upset_rows = []
     for index_val, pats in per_index_patterns.items():
-        rowdict = {"Index": index_val, "PatternString": ",".join(sorted(pats))}
+        rowdict = {
+            "Index": index_val,
+            "PatternString": ",".join(sorted(pats)),
+        }
         for c in all_cols_sorted:
             rowdict[c] = 1 if c in pats else 0
         upset_rows.append(rowdict)
@@ -234,9 +362,15 @@ def main():
     upset_df = upset_df[["Index", "PatternString"] + all_cols_sorted]
     upset_df.to_csv(args.out_upset, sep="\t", index=False)
 
+    # Summary statistics for boundary types
+    L_btype_counts = Counter(v[0] for v in dcr_boundary_types.values())
+    R_btype_counts = Counter(v[1] for v in dcr_boundary_types.values())
+
     print(f"Wrote detailed table: {args.out_detailed}")
     print(f"Wrote UpSet table:    {args.out_upset}")
     print(f"Edge k-mer used: {EDGE_K} | Pattern columns: {', '.join(all_cols_sorted)}")
+    print(f"L_boundary_type counts: {dict(L_btype_counts)}")
+    print(f"R_boundary_type counts: {dict(R_btype_counts)}")
 
 if __name__ == "__main__":
     main()

@@ -9,8 +9,8 @@ library(viridis)
 library(grid)
 
 ### data #######################
-junctions<-read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2025/06-17_DCR_pipeline/DCR-pipeline/output/03_GTEx/demultiplexed.tallyman.counts.unique.wHeader.tsv", header=TRUE)
-gtexMetadata<-read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2025/06-17_DCR_pipeline/DCR-pipeline/output/03_GTEx/GTExMetadataUpdated.txt", header=TRUE, comment.char = "")
+junctions<-read.table("output/03_GTEx/demultiplexed.tallyman.counts.unique.wHeader.tsv", header=TRUE)
+gtexMetadata<-read.table("data/GTExMetadataUpdated.txt", header=TRUE, comment.char = "")
 #names(gtexMetadata)=c("sample", "tissue", "lib_size", "color", "ShortName", "NormFactors")
 
 ### color palette ##############
@@ -83,7 +83,7 @@ DCE_heatmaps<-function(input_mat=AllnoProbes, GTEx_metadata=GTEx_metadata, min_r
   #print(to_keep)
   count_data<-count_data[to_keep,]
   kept_samples<-data.frame(needle = AllnoProbes[,1], kept = to_keep)
-  write.table(kept_samples, "/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2025/06-17_DCR_pipeline/DCR-pipeline/output/03_GTEx/filtered_counts.tsv", quote = FALSE, sep = "\t", row.names = TRUE)
+  write.table(kept_samples, "output/03_GTEx/filtered_counts.tsv", quote = FALSE, sep = "\t", row.names = TRUE)
   samples <- colnames(count_data)
   
   # Subset metadata for the samples in count_data
@@ -109,7 +109,7 @@ DCE_heatmaps<-function(input_mat=AllnoProbes, GTEx_metadata=GTEx_metadata, min_r
     normalized_counts_df <- merge(normalized_counts_df, metadata, by = "sample")
     #tail(names(normalized_counts_df))
     # write normalized counts to file to extract statistics for paper
-    write.table(normalized_counts_df, "/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2025/06-17_DCR_pipeline/DCR-pipeline/output/03_GTEx/normalized_counts.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
+    write.table(normalized_counts_df, "output/03_GTEx/normalized_counts.tsv", quote = FALSE, sep = "\t", row.names = FALSE)
     
     # Group by tissue and calculate mean normalized counts per tissue
     mean_normalized_by_tissue <- normalized_counts_df %>%
@@ -204,7 +204,7 @@ DCE_heatmaps<-function(input_mat=AllnoProbes, GTEx_metadata=GTEx_metadata, min_r
 
 ### run ############################
 # 2 reads in 2 sample to keep needle
-pdf(width = 20, height = 15, file= "/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2025/06-17_DCR_pipeline/DCR-pipeline/output/03_GTEx/Heatmap.pdf")
+pdf(width = 20, height = 15, file= "output/03_GTEx/Heatmap.pdf")
 # note: the layout and annotation are optimized for the parameters below.
 #       If clustering = F, annotation will be with full names on the bott
 #       -om row

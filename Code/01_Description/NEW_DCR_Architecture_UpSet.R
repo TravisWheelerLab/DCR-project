@@ -3,7 +3,7 @@ library(dplyr)
 library(ggplot2)
 
 # Read table
-df <- readr::read_tsv("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2025/06-17_DCR_pipeline/DCR-pipeline/output/01_Description/NEW_DCR_architectures_exon_edges_upset.tsv", show_col_types = FALSE)
+df <- readr::read_tsv("Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/01_Description/NEW_DCR_architectures_exon_edges_upset.tsv", show_col_types = FALSE)
 
 # Identify the binary pattern columns (everything except Index and PatternString)
 pattern_cols <- setdiff(colnames(df), c("Index", "PatternString"))

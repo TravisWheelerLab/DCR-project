@@ -1,0 +1,10 @@
+00_README <- this file
+Chuang2007.UNMATCHED_EXCLUDED.txt <- Genes for which symbols are not recognized
+Chung2007.uniq.txt <- list to use ***
+Chung2007_hgnc-symbol-check.csv <- Gene symbol update; OG file = Table_S4.pdf (added manually OTOGL from provided gi#)
+
+-------
+
+commands for formatting: 
+sed 's/,/\t/g;s/"//g' Chung2007_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {if ($2 == "Unmatched") print $1}' | sort | uniq > Chuang2007.		
+sed 's/,/\t/g;s/"//g' Chung2007_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {print $3}' | sed '/^$/d' | sort | uniq > Chung2007.uniq.txt

@@ -1,0 +1,5 @@
+# raw table is from Supporting Information Table S1 https://www.pnas.org/doi/suppl/10.1073/pnas.0907841107/suppl_file/pnas.0907841107_si.pdf
+# gene ID (numerical) is extracted
+awk '{print $1}' papers_raw_tables/Kovaks2010/Kovaks2010_raw_table | sort | uniq > papers_raw_tables/Kovaks2010/Kovaks2010_raw_table_uniq
+# converted to gene symbol
+2 not converted: 653129 (PTPN20A) and 9503 (XAGE1D), added manually

@@ -1,0 +1,10 @@
+00_README <- this file
+Xu2010.UNMATCHED_EXCLUDED.txt <- Gene symbol failing update and excluded from final list
+Xu2010.uniq.txt <- list to use *** 
+Xu2010_hgnc-symbol-check.csv <- gene symbol update; OG file = 41422_2010_BFcr201025_MOESM254_ESM.slx, tab "human", column "gene symbol"
+
+-------
+
+commands for formatting:
+sed 's/,/\t/g;s/"//g' Xu2010_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {if ($2 == "Unmatched") print $1}' | sort | uniq > Xu2010.UNMATCHED_EXCLUDED.txt
+sed 's/,/\t/g;s/"//g' Xu2010_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {print $3}' | sed '/^$/d' | sort | uniq > Xu2010.uniq.txt

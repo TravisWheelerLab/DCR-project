@@ -1,0 +1,8 @@
+00_README <- this file
+Lin2011.uniq.txt <- list to use ***
+Lin2011_hgnc-symbol-check.csv <- gene symbol update; OG file = LinMF_SCE_Supplement.pdf; SENSE transcription. These are labelled "NOVEL DCE".
+
+-------
+
+commands for formatting: 
+sed 's/,/\t/g;s/"//g' Lin2011_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {print $3}' | sed '/^$/d' | sort | uniq > Lin2011.uniq.txt

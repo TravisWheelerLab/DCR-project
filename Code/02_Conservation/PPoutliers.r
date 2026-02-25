@@ -3,11 +3,11 @@ library(ggplot2)
 library(dplyr)
 ### Human DCR ranked by PP and mouse status V2
 
-dcePP<-read.table("output/02_Conservation/meanPP_per_DCE.tsv", h = T)
+dcePP<-read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/02_Conservation/meanPP_per_DCE.tsv", h = T)
 # length(unique(dcePP[dcePP$DCE_ID %in% unique(humDCE2F_noITR$Index), ]$DCE_ID))
 names(dcePP)<-c("DCE_ID", "meanPP")
 length(unique(dcePP$DCE_ID))
-dce2gene<-read.table("output/02_Conservation/DCEtoGene.txt")
+dce2gene<-read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/02_Conservation/DCEtoGene.txt")
 #length(unique(dce2gene$DCE_ID))
 names(dce2gene)<-c("DCE_ID", "gene")
 dcePPwgene<-merge(dcePP, dce2gene, by = "DCE_ID")
@@ -15,7 +15,7 @@ dcePPwgene<-merge(dcePP, dce2gene, by = "DCE_ID")
 
 dcePPwgene$gene <- toupper(dcePPwgene$gene)
 
-DCEframesCount<-read.table("output/02_Conservation/frames_per_DCR.txt")
+DCEframesCount<-read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/02_Conservation/frames_per_DCR.txt")
 names(DCEframesCount)<-c("DCE_ID", "frames")
 dcePPwgene<-merge(dcePPwgene, DCEframesCount, by = "DCE_ID")
 #length(unique(dcePPwgene$DCE_ID)) 1726
@@ -31,29 +31,26 @@ infoQT<-as.data.frame(cbind(c("1st percentile", "DCR median", "99th percentile")
                             rep(-100, 3)))
 names(infoQT)<-c("label", "y", "x")
 
-exon_to_dce <- read.table("output/02_Conservation/mouse_exon_to_dce_id.txt")
-names(exon_to_dce)<-c("ID", "ORF2exon_ratio", "DCE_ID")
-# report if exon is dual coding in mice:
-exon_to_dce[exon_to_dce$ORF2exon_ratio >= 0.8,] %>% group_by(ID) %>%
-  reframe(dual_coding = ifelse(length(ID) > 1, 1, 0),
-          orf_over_80pc = length(ID),
-          DCE_ID = unique(DCE_ID)) %>% group_by(DCE_ID) %>%
-  summarize(exons_dce_level = sum(dual_coding)/length(DCE_ID),
-            mouse_DC_status = ifelse(sum(dual_coding)/length(DCE_ID) == 1, "DCE", 
-                                     ifelse(sum(dual_coding)/length(DCE_ID) == 0, "non-DCE",
-                                            "partial-DCE"))) -> exonID_to_DCEstatus
+mice_satus<-read.csv("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/02_Conservation/DCRmiceStatus.csv", sep = ",")
+
+# exon_to_dce <- read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/02_Conservation/mouse_exon_to_dce_id.txt")
+# names(exon_to_dce)<-c("ID", "ORF2exon_ratio", "DCE_ID")
+# # report if exon is dual coding in mice:
+# exon_to_dce[exon_to_dce$ORF2exon_ratio >= 0.8,] %>% group_by(ID) %>%
+#   reframe(dual_coding = ifelse(length(ID) > 1, 1, 0),
+#           orf_over_80pc = length(ID),
+#           DCE_ID = unique(DCE_ID)) %>% group_by(DCE_ID) %>%
+#   summarize(exons_dce_level = sum(dual_coding)/length(DCE_ID),
+#             mouse_DC_status = ifelse(sum(dual_coding)/length(DCE_ID) == 1, "DCE", 
+#                                      ifelse(sum(dual_coding)/length(DCE_ID) == 0, "non-DCE",
+#                                             "partial-DCE"))) -> exonID_to_DCEstatus
 
 
-dcePPwgene_wID <- merge(dcePPwgene, exonID_to_DCEstatus, by = "DCE_ID")
-dcePPwgene_wID$mouse_DC_status <- factor(dcePPwgene_wID$mouse_DC_status, levels = rev(c("DCE", "partial-DCE", "non-DCE")),
-                                         labels = rev(c("DCR", "Partial DCR", "not DCR")))
+dcePPwgene_wID <- merge(dcePPwgene, mice_satus, by = "DCE_ID")
+print(length(unique(dcePPwgene_wID$DCE_ID)))
+dcePPwgene_wID$mice_status <- factor(dcePPwgene_wID$mice_status, levels = c("DCR", "not DCR", "too short", "not mapped"))
 
-# Addition 10-07-25: remove DCR with ambiguous isoforms mappings (wrong start or end due to small first or last exon)
-DCR2keep<-read.table("Google Drive/My Drive/Wheeler_Lab/2025/06-17_DCR_pipeline/DCR-pipeline/output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed")
-DCRlist2keep<-unique(DCR2keep$V1)
-dcePPwgene_wID<-dcePPwgene_wID[dcePPwgene_wID$DCE_ID %in% DCRlist2keep,]
-length(unique(dcePPwgene_wID$DCE_ID))
-#length(unique(dcePPwgene$DCE_ID))
+#length(unique(dcePPwgene_wID$DCE_ID))
 
 inset<-ggplot(dcePPwgene_wID)+
   geom_bar(aes(x = reorder(as.character(DCE_ID),meanPP),
@@ -90,9 +87,9 @@ plotW<-length(PPoutliers$DCE_ID)
 main_p<-ggplot(PPoutliers)+
   geom_bar(aes(x = reorder(as.character(DCE_ID),meanPP),
                y = meanPP,
-               fill = mouse_DC_status)
+               fill = mice_status)
            , stat = "identity")+
-  scale_fill_manual(values = rev(c("#FFA800", "orange4", "#FFF0BD")), name = "mouse status:")+
+  scale_fill_manual(values = c("#FFA800", "orange4", "#FFF0BD"), name = "mouse status:")+
   geom_segment(aes(y = nnDCEmed, yend = nnDCEmed, x = 0, xend = plotW+1), lty = 2)+
   geom_segment(aes(y = low_1_nnDCEmean, yend = low_1_nnDCEmean, x = 0, xend = plotW+1), lty = 2, col = "grey")+
   geom_segment(aes(y = high_99_nnDCEmean, yend = high_99_nnDCEmean, x = 0, xend = plotW+1), lty = 2, col = "grey")+
@@ -113,23 +110,4 @@ main_p<-ggplot(PPoutliers)+
 
 figure2C<-cowplot::ggdraw(main_p) +
   cowplot::draw_plot(inset,x = 0.06 ,y = 0.70, width = 0.25, height = 0.3,)# axis.ticks.y = element_blank(),
-ggsave("output/02_Conservation/Figure2C_DCR_PhyloP_outliers.pdf", figure2C, width = 8, height = 6)
-
-
-
-# extra for paper
-dcePPwgene_wID$group<-rep(1, length(dcePPwgene_wID$DCE_ID))
-ggplot(dcePPwgene_wID)+
-  geom_bar(aes(x = group, fill = factor(mouse_DC_status)), show.legend = F)+
-  scale_fill_manual(name = "mouse status", values = rev(c("#FFA800", "orange4", "#FFF0BD")))+
-  scale_y_continuous(breaks = c(0, 250, 500, 750, 1000, 1250, 1500))+
-  xlab("")+
-  ylab("human DCR")+
-  theme_classic()+
-  theme(axis.line.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.x = element_blank())
-length(unique(dcePPwgene_wID$DCE_ID))
-sum(table(dcePPwgene_wID$mouse_DC_status))
-
-PPoutliers[order(PPoutliers$meanPP, decreasing = T),]
+ggsave("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/02_Conservation/Figure2C_DCR_PhyloP_outliers.pdf", figure2C, width = 8, height = 6)

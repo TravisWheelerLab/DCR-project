@@ -56,6 +56,78 @@ mkdir -p logs/01_Description
 
 ############## SCRIPT STARTS HERE ##############
 
+## First we generate a DCR track (.bed) with all candidate regions from MIRAGE 2 ##
+
+# Create DCR regions bed ########################
+INDIR=Data/Extracted-DCEs_06202025
+BEDOUT="output/01_Description/raw_DCR_overlapping_regions.bed"
+#awk 'NR > 1 {print $1}' output/01_Description/homo_sapiens_filter.${IDTY}pcnt.noAmbigGenes.tsv | sort | uniq > output/01_Description/finalDCR
+# create a list of DCR to parallelize
+
+
+if [ "$FLAG" = true ] && [ -s "$BEDOUT" ]; then
+    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Skipping DCR regions bed (already exists and not empty)"
+else
+    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Extracting exon phases from mapping data..."
+    cat data/Species-MSAs/homo_sapiens/mappings/*.out |\
+     awk '/Sequence ID:/ {print $0; next} /Aminos/{getline coord; n=split(coord, Scoord, ","); print $0"\t"Scoord[1]"\t"Scoord[n]}' |\
+      awk '{if($0~/\[revcomp\]/) {print $0"\t"$NF} else {print $0"\t"$(NF-1)}}' | sed 's/\.\./-/g' |\
+       awk '/Sequence ID/ {sequenceID = $3; next} /\*/{aminoPos = $NF; split($4, coord, "[:-]"); print sequenceID".."coord[2]".."coord[3]"\t"aminoPos%3}' > output/01_Description/DCE_exons_with_phase.tsv
+    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Generating bed track for DCR. This can take a while..."
+    touch logs/01_Description/DCR_regions_bed.log
+    ls ${INDIR}/homo_sapiens/* |\
+    parallel scripts/01_Description/extract_DCE_regions_v2_fast.sh 2>> logs/01_Description/DCR_regions_bed.log |\
+    grep 'DCEid=' 2>> logs/01_Description/DCR_regions_bed.log > "$BEDOUT"
+fi
+DCRbedCount=$(sed 's/;/\t/g' ${OUT6} | cut -f 4 | sort | uniq | wc -l | awk '{print $1}')
+echo "[info $(date '+%Y-%m-%d %H:%M:%S')] The DCR bed track has ${DCRbedCount} DCRs (/${finalDCRcnt} retained DCR used in input))"
+# # make filterd track
+# grep -f <(awk '{print "DCEid="$0";"}' output/01_Description/DCRs_with_2or3_frames.txt) output/01_Description/DCR_overlapping_regions.bed > output/01_Description/DCR_overlapping_regions_filtered.bed
+# # count
+# DCRbedCountFiltered=$(sed 's/;/\t/g'  output/01_Description/DCR_overlapping_regions_filtered.bed | cut -f 4 | sort | uniq | wc -l | awk '{print $1}')
+# echo "[info $(date '+%Y-%m-%d %H:%M:%S')] The filterd DCR bed track has ${DCRbedCountFiltered} DCRs (/${KEPT} in input))"
+# save missing DCRs in the between the filtered csv and the filtered track.
+grep -wvf <(sed 's/;/\t/g' ${OUT6} | cut -f 4 | sort | uniq) <(awk '{print "DCEid="$0}' <(echo ${finalDCR})) > output/01_Description/DCRs_missing_from_filterd_bed.txt
+missCount=$(sort output/01_Description/DCRs_missing_from_filterd_bed.txt| uniq | wc -l | awk '{print $1}')
+if [ -s "output/01_Description/DCRs_missing_from_filterd_bed.txt" ]; then
+    echo "[warning $(date '+%Y-%m-%d %H:%M:%S')] ${missCount} DCRs are missing between the filtered tsv and the bed track (see output/01_Description/DCRs_missing_from_filterd_bed.txt)."
+fi
+# add gene name and frame count
+OUT7="output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed"
+if [ "$FLAG" = true ] && [ -s "$OUT7" ]; then
+    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Skipping filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed (already exists and not empty)"
+else
+    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Adding gene names and frame counts to DCR bed track"
+    # get geneID and DCRid from the filtered DCRs
+    awk 'NR > 1 {print $1"\t"$2}' ${OUT2_2} | sort | uniq > output/01_Description/filtered_DCRid_geneID.tsv
+    join -14 -21 <(sed 's/DCEid=//g;s/;nFrames=/\t/g' ${OUT6} | sort -k4,4) <(sort -k1,1 output/01_Description/filtered_DCRid_geneID.tsv) | awk '{print $2"\t"$3"\t"$4"\t"$1"\t"$7"\t"$8"\t"$5}' > output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed
+fi
+
+# Addition 09-26-25: remove DCR with ambiguous isoforms mappings (wrong start or end due to small first or last exon)
+grep -vf <(awk '{print "^"$0"\\b"}' DCR_to_remove_due_to_isoforms_problematic_end_regions.txt) <(awk '{print $4"\t"$0}' output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed) > output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb_fixed.bed
+mv output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb_fixed.bed output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed
+grep -vf <(awk '{print "DCEid="$0";"}' DCR_to_remove_due_to_isoforms_problematic_end_regions.txt) output/01_Description/filtered_DCR_overlapping_regions.bed > output/01_Description/filtered_DCR_overlapping_regions.bed_fixed
+mv output/01_Description/filtered_DCR_overlapping_regions.bed_fixed output/01_Description/filtered_DCR_overlapping_regions.bed
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Count DCR in ##
 INDIR=$(dirname "$INPUT_FILE")
 DCRIN=$(awk 'NR > 1{print $1}' ${INPUT_FILE}| sort | uniq | wc -l | awk '{print $1}')
@@ -135,75 +207,8 @@ else
     #python3.11 scripts/01_Description/categorize_DCR_with_up_down_exons.py -i output/01_Description/homo_sapiens_filter.${IDTY}pcnt.noAmbigGenes.tsv > "$LOG3" 2>&1
 fi
 
-# DEPRECATED # export table for Venn Diagram #################
 
-# OUT4="output/01_Description/Per_DCR_connections_for_VennD.tsv"
-# LOG4="logs/01_Description/classify.DCR4Venn.log"
-# if [ "$FLAG" = true ] && [ -s "$OUT4" ]; then
-#     echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Skipping classify.DCR4Venn.py (log exists and not empty)"
-# else
-#     echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Classifying DCR 2/2"
-#     python3.11 scripts/01_Description/categorize_DCR_with_up_down_exons__FOR_VENN.py -i output/01_Description/homo_sapiens_filter.${IDTY}pcnt.noAmbigGenes.tsv > "$LOG4" 2>&1
-# fi
 
-# make the graph (Figure 1 C) ###################
-
-# OUT5="output/01_Description/Figure1_C_VennDiagram.pdf"
-# LOG5="logs/01_Description/Figure1C_R_.log"
-# if [ "$FLAG" = true ] && [ -s "$OUT5" ]; then
-#     echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Skipping Figure 1C R script (log exists and not empty)"
-# else
-#     echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Plotting Figure 1 C"
-#     Rscript ./scripts/01_Description/VennDiagram.r output/01_Description/Per_DCR_connections_for_VennD.tsv > "$LOG5" 2>&1
-# fi
-
-# Create DCR regions bed ########################
-
-OUT6="output/01_Description/filtered_DCR_overlapping_regions.bed"
-awk 'NR > 1 {print $1}' output/01_Description/homo_sapiens_filter.${IDTY}pcnt.noAmbigGenes.tsv | sort | uniq > output/01_Description/finalDCR
-if [ "$FLAG" = true ] && [ -s "$OUT6" ]; then
-    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Skipping DCR regions bed (already exists and not empty)"
-else
-    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Extracting exon phases from mapping data..."
-    cat data/Species-MSAs/homo_sapiens/mappings/*.out |\
-     awk '/Sequence ID:/ {print $0; next} /Aminos/{getline coord; n=split(coord, Scoord, ","); print $0"\t"Scoord[1]"\t"Scoord[n]}' |\
-      awk '{if($0~/\[revcomp\]/) {print $0"\t"$NF} else {print $0"\t"$(NF-1)}}' | sed 's/\.\./-/g' |\
-       awk '/Sequence ID/ {sequenceID = $3; next} /\*/{aminoPos = $NF; split($4, coord, "[:-]"); print sequenceID".."coord[2]".."coord[3]"\t"aminoPos%3}' > output/01_Description/DCE_exons_with_phase.tsv
-    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Generating bed track for DCR. This can take a while..."
-    touch logs/01_Description/DCR_regions_bed.log
-    ls ${INDIR}/homo_sapiens/* | grep -f <(awk '{print "/"$1"\\."}' output/01_Description/finalDCR) |\
-    parallel scripts/01_Description/extract_DCE_regions_v2_fast.sh 2>> logs/01_Description/DCR_regions_bed.log |\
-    grep 'DCEid=' 2>> logs/01_Description/DCR_regions_bed.log > "$OUT6"
-fi
-DCRbedCount=$(sed 's/;/\t/g' ${OUT6} | cut -f 4 | sort | uniq | wc -l | awk '{print $1}')
-echo "[info $(date '+%Y-%m-%d %H:%M:%S')] The DCR bed track has ${DCRbedCount} DCRs (/${finalDCRcnt} retained DCR used in input))"
-# # make filterd track
-# grep -f <(awk '{print "DCEid="$0";"}' output/01_Description/DCRs_with_2or3_frames.txt) output/01_Description/DCR_overlapping_regions.bed > output/01_Description/DCR_overlapping_regions_filtered.bed
-# # count
-# DCRbedCountFiltered=$(sed 's/;/\t/g'  output/01_Description/DCR_overlapping_regions_filtered.bed | cut -f 4 | sort | uniq | wc -l | awk '{print $1}')
-# echo "[info $(date '+%Y-%m-%d %H:%M:%S')] The filterd DCR bed track has ${DCRbedCountFiltered} DCRs (/${KEPT} in input))"
-# save missing DCRs in the between the filtered csv and the filtered track.
-grep -wvf <(sed 's/;/\t/g' ${OUT6} | cut -f 4 | sort | uniq) <(awk '{print "DCEid="$0}' <(echo ${finalDCR})) > output/01_Description/DCRs_missing_from_filterd_bed.txt
-missCount=$(sort output/01_Description/DCRs_missing_from_filterd_bed.txt| uniq | wc -l | awk '{print $1}')
-if [ -s "output/01_Description/DCRs_missing_from_filterd_bed.txt" ]; then
-    echo "[warning $(date '+%Y-%m-%d %H:%M:%S')] ${missCount} DCRs are missing between the filtered tsv and the bed track (see output/01_Description/DCRs_missing_from_filterd_bed.txt)."
-fi
-# add gene name and frame count
-OUT7="output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed"
-if [ "$FLAG" = true ] && [ -s "$OUT7" ]; then
-    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Skipping filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed (already exists and not empty)"
-else
-    echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Adding gene names and frame counts to DCR bed track"
-    # get geneID and DCRid from the filtered DCRs
-    awk 'NR > 1 {print $1"\t"$2}' ${OUT2_2} | sort | uniq > output/01_Description/filtered_DCRid_geneID.tsv
-    join -14 -21 <(sed 's/DCEid=//g;s/;nFrames=/\t/g' ${OUT6} | sort -k4,4) <(sort -k1,1 output/01_Description/filtered_DCRid_geneID.tsv) | awk '{print $2"\t"$3"\t"$4"\t"$1"\t"$7"\t"$8"\t"$5}' > output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed
-fi
-
-# Addition 09-26-25: remove DCR with ambiguous isoforms mappings (wrong start or end due to small first or last exon)
-grep -vf <(awk '{print "^"$0"\\b"}' DCR_to_remove_due_to_isoforms_problematic_end_regions.txt) <(awk '{print $4"\t"$0}' output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed) > output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb_fixed.bed
-mv output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb_fixed.bed output/01_Description/filtered_DCE_overlapping_regions_with_gene_and_dceID_and_frameNb.bed
-grep -vf <(awk '{print "DCEid="$0";"}' DCR_to_remove_due_to_isoforms_problematic_end_regions.txt) output/01_Description/filtered_DCR_overlapping_regions.bed > output/01_Description/filtered_DCR_overlapping_regions.bed_fixed
-mv output/01_Description/filtered_DCR_overlapping_regions.bed_fixed output/01_Description/filtered_DCR_overlapping_regions.bed
 
 # DCR exons count and distribution ##########
 
@@ -262,6 +267,9 @@ else
     python3.11 scripts/01_Description/isoform_NMD.py
 fi  
 
+# add uncertainty to per-isoform DCR assessment
+awk '{if ($5 == "no_NMD" && $4 <= 50) print $0 "\tnot_enough_evidence"; else if ($5 == "no_NMD" && $4 == "last_exon") print $0 "\tno_NMD"; else print $0 "\tNMD"}' output/01_Description/NMDtable.tsv > output/01_Description/NMDtable_updated.tsv
+
 # Addition 09-26-25: remove DCR with ambiguous isoforms mappings (wrong start or end due to small first or last exon)
 grep -vf <(awk '{print "^"$0"\\b"}' DCR_to_remove_due_to_isoforms_problematic_end_regions.txt) output/01_Description/DCR_NMD_analysis.out > output/01_Description/DCR_NMD_analysis.out_fixed
 mv output/01_Description/DCR_NMD_analysis.out_fixed output/01_Description/DCR_NMD_analysis.out
@@ -305,8 +313,6 @@ bedtools getfasta -s -bed <(grep 'junction=downstream;site=acceptor' output/01_D
 /opt/homebrew/bin/weblogo -f output/01_Description/EXPERIMENTAL_control_DOWNSTREAM_DONOR_splice_sites.fa -o output/01_Description/LOGO_control_downstream_donor.pdf -A DNA -U probability -F PDF -t "downstream donor site" -s large -c classic
 /opt/homebrew/bin/weblogo -f output/01_Description/EXPERIMENTAL_control_DOWNSTREAM_ACCEPTOR_splice_sites.fa -o output/01_Description/LOGO_control_downstream_acceptor.pdf -A DNA -U probability -F PDF -t "downstream acceptor site" -s large -c classic
 echo "[info $(date '+%Y-%m-%d %H:%M:%S')] Pipeline step 01 (DCR Description) completed"
-
-
 
 ###### the code below was required to generate the list of DCR to exclude due to incorrect mapping which generate the file "DCR_to_remove_due_to_isoforms_problematic_end_regions.txt" #########
 

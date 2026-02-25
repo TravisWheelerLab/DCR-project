@@ -4,31 +4,31 @@ library(dplyr)
 library(reshape2)
 library(ggsankey)
 
-plddts<-read.table("extract_DCR_plddts.tsv")
+plddts<-read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/data/extract_DCR_plddts.tsv")
 names(plddts)<-c("DCR_ID", "gene", "isoform", "PepPos", "AA", "plddt", "form")
 
 # control canonical/alternative status since update
-updated_frame_assignment<-read.table("Table_S1.tsv", h = T)
-pep_iso_slice <- updated_frame_assignment[updated_frame_assignment$DCR %in% unique(plddts$DCR_ID),] 
-pep_iso_slice %>% separate(col = isoform, into = c("species", "gene", "iso_number"), sep = "\\|") -> pep_iso_slice_processed
-pep_iso_slice_processed2<-pep_iso_slice_processed[,c("DCR", "iso_number", "new_frame_status")]
-pep_iso_slice_processed2$DCR_iso <- paste(pep_iso_slice_processed2$DCR, pep_iso_slice_processed2$iso_number, sep = "_")
-
-plddts_summary <- plddts %>% group_by(DCR_ID, isoform) %>% summarise(form = unique(form))
-plddts_summary$DCR_iso <- paste(plddts_summary$DCR_ID, plddts_summary$isoform, sep = "_")
-
-pep_iso_slice_processed2 <- pep_iso_slice_processed2[pep_iso_slice_processed2$DCR_iso %in% unique(plddts_summary$DCR_iso),]
-
-comparison <- merge(plddts_summary, pep_iso_slice_processed2, by = "DCR_iso")
+perIsoDCR<-read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/output/New_TableS1.tsv", h = T)
+# pep_iso_slice <- updated_frame_assignment[updated_frame_assignment$DCR %in% unique(plddts$DCR_ID),] 
+# pep_iso_slice %>% separate(col = isoform, into = c("species", "gene", "iso_number"), sep = "\\|") -> pep_iso_slice_processed
+# pep_iso_slice_processed2<-pep_iso_slice_processed[,c("DCR", "iso_number", "new_frame_status")]
+# pep_iso_slice_processed2$DCR_iso <- paste(pep_iso_slice_processed2$DCR, pep_iso_slice_processed2$iso_number, sep = "_")
+# 
+# plddts_summary <- plddts %>% group_by(DCR_ID, isoform) %>% summarise(form = unique(form))
+# plddts_summary$DCR_iso <- paste(plddts_summary$DCR_ID, plddts_summary$isoform, sep = "_")
+# 
+# pep_iso_slice_processed2 <- pep_iso_slice_processed2[pep_iso_slice_processed2$DCR_iso %in% unique(plddts_summary$DCR_iso),]
+# 
+# comparison <- merge(plddts_summary, pep_iso_slice_processed2, by = "DCR_iso")
 
 
 # structure level
-dssp<-read.table("DCR_peps_structure_annotation.tsv")
+dssp<-read.table("/Users/clementgoubert/Library/CloudStorage/GoogleDrive-goubert.clement@gmail.com/My Drive/Wheeler_Lab/2026/02_04_DCR-merge-overlap/DOOVER/data/DCR_peps_structure_annotation.tsv")
 names(dssp)<-c("DCR", "isoform", "frame", "pos", "AA", "structure", "form")
 
-perIsoDCR<-unique(updated_frame_assignment[,c("DCR", "frame", "new_frame_status")])
+#perIsoDCR<-unique(updated_frame_assignment[,c("DCR", "frame", "new_frame_status")])
 perIsoDCR$key<-paste(perIsoDCR$DCR, perIsoDCR$frame, sep = "_")
-perIsoDCR$frame_status <- perIsoDCR$new_frame_status
+#perIsoDCR$frame_status <- perIsoDCR$new_frame_status
 iso_form<-unique(perIsoDCR[c("key", "frame_status")])
 dssp$key<-paste(dssp$DCR, dssp$frame, sep = "_")
 dssp<-merge(dssp[,c(1:6,8)], iso_form, by = "key")
@@ -48,7 +48,11 @@ struct_plddt2$confident_structure <- factor(struct_plddt2$confident_structure,
                                             labels = c("AA plddt < 70", "disordered", "α-helix", "residue in isolated β-bridge", 
                                                        "extended strand, participates in β ladder", "3[10]-helix", "π-helix", "poly-proline II helix",
                                                        "hydrogen-bonded turn", "bend"))
-ggplot(struct_plddt2)+
+
+# control that the manually edited DCR are not included (they went from internal to C-term)
+struct_plddt2f <- struct_plddt2[!struct_plddt2$DCR == 576,]
+
+ggplot(struct_plddt2f)+
   geom_bar(aes(x = frame_status, y = struc_count, fill = confident_structure), position = "fill", stat = "identity")+
   ylab("proportion among isoforms")+
   xlab("isoform DCR category")+
@@ -80,4 +84,6 @@ ggplot(struct_plddt2)+
 
 ### stats
 
-length(unique(struct_plddt2$DCR))
+length(unique(struct_plddt2f$DCR))
+struct_plddt2f %>% group_by(DCR, frame_status) %>% summarize(disordered_pc = sum(struc_count[confident_structure == "disordered"])/sum(struc_count)) -> diso
+struct_plddt2f[struct_plddt2f$DCR == 66,]

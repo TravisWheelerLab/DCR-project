@@ -1,0 +1,16 @@
+00_README <- this file
+vanderperre2013.PROTEINS.UNMATCHED_EXCLUDED.txt <- Genes for which symbols are not recognized
+vanderperre2013.PROTEINS.uniq.alldatasets.txt <- Gene list to use ***
+vanderperre2013.PROTEINS.uniq.alldatasets_hgnc-symbol-check.csv <- Gene symbol update
+vanderperre2013.mRNA.allpredictions.UNMATCHED_EXCLUDED.txt <- Genes for which symbols are not recognized
+vanderperre2013.mRNA.allpredictions.uniq.txt <- Gene list to use ***
+vanderperre2013.mRNA.allpredictions.uniq_hgnc-symbol-check.csv  <- Gene symbol update
+
+"PROTEINS": list of genes based on protein detection by LC-MS/MS in diverse tissues, matching their DCE database ("mRNA" list); OG file = pone.0070698.s006.xlsx
+"mRNA": non-redundant list of genes from their DCE database, made from bioinformatic prediction; OG file = DatabaseS1.xlsx
+
+-------
+
+commands for formatting:
+ sed 's/,/\t/g;s/"//g' vanderperre2013.mRNA.allpredictions.uniq_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {print $3}' | sed '/^$/d' | sort | uniq > vanderperre2013.mRNA.allpredictions.uniq.txt
+ sed 's/,/\t/g;s/"//g' vanderperre2013.mRNA.allpredictions.uniq_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {if ($2 == "Unmatched") print $1}' | sort | uniq > vanderperre2013.mRNA.allpredictions.UNMATCHED_EXCLUDED.txt

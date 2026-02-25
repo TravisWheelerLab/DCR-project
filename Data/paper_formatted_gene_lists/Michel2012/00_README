@@ -1,0 +1,9 @@
+00_README <- this file
+Michel2012.uniq.txt <- gene list to use
+Michel2012_from_pdf.tsv <- extract data from sup pdf; OG file = SuppMaterial.pdf
+Michel2012_hgnc-symbol-check.csv <- gene symbol update
+
+-------
+
+commands for formatting: 
+sed 's/,/\t/g;s/"//g' Michel2012_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {print $3}' | sed '/^$/d' | sort | uniq > Michel2012.uniq.txt

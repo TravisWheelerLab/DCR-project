@@ -21,12 +21,6 @@ do
 	# get the termini of each group
 	Gend=$(cat $file | grep '> Group\|Genome Ranges' | awk 'getline range {print $3"\t"range}' | awk '{sub(/:/, "", $1); print "Group_"$1"\t"$NF}')
 	# joint it to group
-	# echo "$GroupedFrames"
-	# echo "$Gend"
 	Final=$(join -11 -21 <(echo "$GroupedFrames" | sort -k1,1 ) <(echo "$Gend" | sort -k1,1) | sed 's/ /\t/g')
-	# filter to pick one representative isoform per frame
-	#fmtd_dce=$(echo "$GroupedFrames" | sort -k3,3n | sort -u -k8,8)
-	if echo ${DCE} | grep -q -wf output/01_Description/filtered.DCR.id.txt; then
-		echo -e "$Final" | awk -v dce=${DCE} '{print $2"\t"$3"\t"$4"\t"dce}' #| sed 's/frames://g'
-	fi
+	echo -e "$Final" | awk -v dce=${DCE} '{print $2"\t"$3"\t"$4"\t"dce}' 
 done

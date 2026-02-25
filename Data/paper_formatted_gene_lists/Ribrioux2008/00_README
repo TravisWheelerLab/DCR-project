@@ -1,0 +1,13 @@
+00_README <- this file
+Ribrioux2008_INCOMPLETE_.uniq.txt <- list to use ***
+Ribrioux2008_RefSeq_CONVERT_FAILED.txt <- Excluded genes for which RefSeq conversion to gene symbol did not work
+Ribrioux2008_RefSeq_to_Gene_symbol.redundant.tsv <- Conversion from RefSeq to gene symbol; from OG file = 12864_2007_1316_MOESM3_ESM.xls
+Ribrioux2008_hgnc-symbol-check.csv <- update of gene symbol; none was missing but some gene were merged.
+
+
+-------
+
+commands for formatting:
+sed 's/,/\t/g;s/"//g' Ribrioux2008_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {if ($2 == "Unmatched") print $1}' | sort | uniq > Ribrioux2008.UNMATCHED_EXCLUDED.txt
+sed 's/,/\t/g;s/"//g' Ribrioux2008_hgnc-symbol-check.csv | awk -F "\t" 'NR > 2 {print $3}' | sed '/^$/d' | sort | uniq > Ribrioux2008_INCOMPLETE_.uniq.txt
+awk 'NF == 1 {print $0}' Ribrioux2008_RefSeq_to_Gene_symbol.redundant.tsv | sort | uniq > Ribrioux2008_RefSeq_CONVERT_FAILED.txt

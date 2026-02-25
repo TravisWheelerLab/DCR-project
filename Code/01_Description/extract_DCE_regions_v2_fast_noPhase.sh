@@ -2,8 +2,8 @@
 # Description: This script parse individual DCE .out file to extract the dual coding region of each DCE.
 # Usage: ls Extracted-DCEs_070124/homo_sapiens/* | parallel ./extract_DCE_regions_v2_fast.sh
 
-filelist=$1 #(ls Extracted-DCEs_070124/homo_sapiens/*)
-#filelist="Extracted-DCEs_070124/homo_sapiens/98.myb.out"
+#filelist=$1 #(ls Extracted-DCEs_070124/homo_sapiens/*)
+filelist="data/Extracted-DCEs_06202025/homo_sapiens/98.glipr1.out"
 
 for file in "${filelist}"
 do

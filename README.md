@@ -1,6 +1,6 @@
 # DCR-Project
 
-Raw data and code supporting the Dual Coding Region publication (DOI TBD).
+Raw data and code supporting the Dual Coding Region publication (BioRxiv: https://doi.org/10.64898/2026.02.24.707805).
 
 ## Data
 
@@ -40,4 +40,4 @@ The `Code/` directory is organized in 4 main sections. The main pipeline scripts
 
 ## Questions/Requests
 
-Questions and requests can be send through the [issue tab](https://github.com/TravisWheelerLab/DCR-project/issues), or via email using the address for correspondence listed on the publication (DOI TBD)
+Questions and requests can be send through the [issue tab](https://github.com/TravisWheelerLab/DCR-project/issues), or via email using the address for correspondence listed on the publication (https://doi.org/10.64898/2026.02.24.707805)
