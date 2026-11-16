@@ -1,0 +1,13 @@
+# Python packages used by Code/05_Revision (versions used for the revision; python 3.11.15).
+# pip install -r Code/05_Revision/requirements.txt   (bedtools + samtools must be on PATH; R packages
+# are listed in environment.yml / R_packages.txt)
+numpy==2.4.6
+pandas==3.0.3
+scipy==1.17.1
+statsmodels==0.14.6
+pyBigWig==0.3.25
+pyfaidx==0.9.0.4
+pybedtools==0.12.1
+# archived prior-session cells only:
+matplotlib==3.11.0
+pyliftover==0.4.1

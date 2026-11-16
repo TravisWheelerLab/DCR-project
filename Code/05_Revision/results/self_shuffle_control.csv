@@ -1,0 +1,10 @@
+metric,value
+observed_dualcoding_pct,82.4
+self_shuffle_dualcoding_pct,68.6
+arrangement_effect_pts,13.8
+observed_count,1318.0
+null_mean,1096.0
+null_ci_low,1067.0
+null_ci_high,1124.0
+Z,15.5
+p_empirical,0.000999000999000999

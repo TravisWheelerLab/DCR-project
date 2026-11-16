@@ -1,0 +1,4 @@
+"frame","offset","n_codons","n_stops","full_length_orf_aa","longest_orf_aa","kmer_share_canonical","kmer_share_alternative","mouse_chrom","mouse_start","mouse_end","mouse_strand","mouse_len","human_len","human_alternative_offset","human_alternative_accessions","human_alternative_stops","human_canonical_offset","human_canonical_accessions","human_canonical_stops","role","fill","y","lab"
+1,0,718,0,718,718,0.201,0.022,"chr2",174139853,174142007,"+",2154,1878,2,"Q5JWF2-1,Q5JWF2-2,Q5JWF2-3",0,0,"P84996-1",0,"canonical","#FFA800",-0.5,"718 aa, no stop"
+2,1,717,29,NA,86,0.025,0.026,"chr2",174139853,174142007,"+",2154,1878,2,"Q5JWF2-1,Q5JWF2-2,Q5JWF2-3",0,0,"P84996-1",0,"none","gray80",-1,"29 stop codons"
+3,2,717,0,717,717,0.03,0.229,"chr2",174139853,174142007,"+",2154,1878,2,"Q5JWF2-1,Q5JWF2-2,Q5JWF2-3",0,0,"P84996-1",0,"alternative","#8E44AD",-1.5,"717 aa, no stop"

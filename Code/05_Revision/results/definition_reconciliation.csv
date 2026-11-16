@@ -1,0 +1,10 @@
+measurement,n,value,interpretation
+mouse DCR region (strict),1599,82.4%,"conservation of dual-coding in mouse orthologs (PUBLISHED, correct)"
+human DCR region (strict),1739,99.9%,definitional sanity check - validates the rule
+human DCR exon (strict),3324,48.2%,"geometry-confounded; NOT ""fraction of DCR exons that are dual-coding"""
+human DCR exon (sub-interval >=21nt),3324,98.0%,"permissive rule; near-saturated, non-discriminative"
+"human DCR exon, DCR covers <50% of exon",1016,18.4%,strict rule fails when DCR is a small part of the exon
+"human DCR exon, DCR covers >=95% of exon",1108,71.3%,strict rule mostly passes when exon is nearly all DCR
+"non-DCR exon (strict, Tier A)",4000,~41%,Tier A matched comparator
+"median max dual-coding overlap, DCR exon",3324,79 nt,dual-coding potential is near-universal in coding exons
+"median max dual-coding overlap, non-DCR exon",4000,77 nt,essentially identical to DCR exons

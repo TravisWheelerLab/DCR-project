@@ -1,0 +1,4 @@
+comparison,dualcoding_pct,ci_low,ci_high
+DCR_observed,82.6,,
+random_ctrl_length_only,60.5,,
+random_ctrl_GClength_matched,64.8,62.9,66.8

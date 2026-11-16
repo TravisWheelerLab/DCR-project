@@ -1,0 +1,4 @@
+gene,chr,start,end,len,dceID,mice_status,mouse_full_length_ORFs
+gbgt1,chr9,133153719,133154242,523,1591,not DCR,
+znf586,chr19,57778750,57779344,594,1618,not mapped,
+gnas,chr20,58853452,58855330,1878,201,DCR,2

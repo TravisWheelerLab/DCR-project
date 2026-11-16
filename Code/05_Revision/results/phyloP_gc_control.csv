@@ -1,0 +1,13 @@
+test,value
+baseline_D_mean,2.602
+baseline_Dg_mean,2.826
+baseline_Ng_mean,2.854
+GCmatched_D_mean,2.602
+GCmatched_Dg_mean,2.729
+GCmatched_Ng_mean,2.811
+D_vs_matchedDg_MWU_p,1.29e-03
+D_vs_matchedNg_MWU_p,2.82e-07
+LM_is_DCR_coef,-0.194
+LM_is_DCR_p,2.15e-10
+LM_gc_coef,-0.0391
+LM_gc_p,0.00e+00

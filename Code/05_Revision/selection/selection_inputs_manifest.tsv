@@ -1,0 +1,12 @@
+file	size_bytes	md5	produced_by
+D_cds.ov	980829	2f5d4055ffbb08b36d715dcb7ce667dc	archive_prior_session/12_selection_test_v1_v2.md (bedtools intersect -wo -f 0.9 with GENCODE CDS)
+D_cds_any.ov	1026321	e0c7d805c6ab3ff5c0cfb6a5c2d32dad	archive_prior_session/12_selection_test_v1_v2.md (bedtools intersect -wo, any overlap)
+D_ucsc.fa	196221	e84f53ef2a0702ffd2ad87ffa4b7125b	archive_prior_session/10_xprime_conservation_filter.md (UCSC liftOver -minMatch=0.10 hg38->mm39 + getfasta)
+N_cds.ov	18150053	a2cacd8da2a8d6d801c1aa6af5501fd5	archive_prior_session/12_selection_test_v1_v2.md (bedtools intersect -wo -f 0.9 with GENCODE CDS)
+N_human.fa	5167180	6cd5ac20582e9c36c2f8f9e3c5a8ab94	archive_prior_session/12_selection_test_v1_v2.md (getfasta -s of N_human.bed, latent dual-coding intervals)
+N_ucsc.fa	4823021	1f01197c5c904a71a677e131dd8a70a4	archive_prior_session/10_xprime_conservation_filter.md (UCSC liftOver of latent-null intervals + getfasta)
+cds_exons.tsv	93328556	bbd2ab5a45a5c802b32e7e9e9bceeadc	archive_prior_session/12_selection_test_v1_v2.md (GENCODE v48 CDS exon table from hg38.GENECODE.V48.bed)
+dcr_exclusion_fates.csv	66146	fd8c114a5540290b88b8ed7ff7c833bb	archive_prior_session/12_selection_test_v1_v2.md (per-interval fates of the v1/v2 test)
+dcr_protein_frames.csv	39121	3de6038308b74cce6ceb42b6e7416240	archive_prior_session/12_selection_test_v1_v2.md (frames from SwissProt isoform models via D_iso.ov)
+dcr_regions.fa	202933	6e35e77050c2a5bfc0096c0db5882600	archive_prior_session/10_xprime_conservation_filter.md (bedtools getfasta -s of the DCR intervals)
+nondcr_pool.fa	10190604	1346b5757d960f44f9b52489a13d32b8	archive_prior_session/10_xprime_conservation_filter.md (stranded non-DCR exon pool)
