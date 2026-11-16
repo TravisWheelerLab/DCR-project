@@ -39,7 +39,7 @@ The `Code/` directory is organized in 4 main sections. The main pipeline scripts
 
 ### Revision analyses (2026)
 
-`Code/05_Revision/` holds the code added for the GBE revision: the alternate-frame selection test (**Figure 2B(iii)**), the comparison of DCRs with ordinary alternative splicing (**Figure S10**), the splice-site, expression-class and tissue-specificity controls (**Figure S9**), the GABBR1 and GNAS gene models (**Figures S6, S7**), the GC-content controls (**Figure S8**), and an archive of the earlier revision code kept as executed. It runs on the outputs of the pipeline above through one driver, `Code/05_Revision/run_revision.sh`. See [`Code/05_Revision/README.md`](Code/05_Revision/README.md).
+`Code/05_Revision/` holds the code added for the GBE revision: the alternate-frame selection test (**Figure 2B(iii)**), the comparison of DCRs with ordinary alternative splicing (**Figure S10**), the splice-site, expression-class and tissue-specificity controls (**Figure S9**), the GABBR1 and GNAS gene models (**Figures S6, S7**), the GC-content controls (**Figure S8**), and an archive of the earlier revision code, kept as executed. A single driver, `Code/05_Revision/run_revision.sh`, runs these analyses on the outputs of the pipeline above. See [`Code/05_Revision/README.md`](Code/05_Revision/README.md).
 
 
 ## Questions/Requests

@@ -1,12 +1,13 @@
-# Code/05_Revision — analyses added for the GBE revision (2026)
+# Code/05_Revision: analyses added for the GBE revision (2026)
 
-Code behind the new and revised analyses of the revised manuscript (Goubert et al., *Alternatively
-spliced dual-coding regions…*, bioRxiv 10.64898/2026.02.24.707805, revision for GBE). Every analysis
-starts from the outputs of the executed pipeline of `Code/01–04` (called **DOOVER** below:
-`output/01_Description`, `output/02_Conservation`, `output/New_TableS1.tsv`, `data/`). DCR calls,
-frames and isoform models always come from the protein-level (UniProtKB/Swiss-Prot isoform) mappings
-of that pipeline, never from GENCODE CDS annotation. Nothing is written inside DOOVER; all outputs go
-to `$WORK`.
+This folder holds the code for the analyses added or changed in the revised manuscript (Goubert et al.,
+*Alternatively spliced dual-coding regions…*, bioRxiv 10.64898/2026.02.24.707805, revision for GBE).
+The analyses start from the outputs of the executed pipeline of `Code/01–04` (called **DOOVER** below:
+`output/01_Description`, `output/02_Conservation`, `output/New_TableS1.tsv`, `data/`). The exception
+is the selection test, which reads 11 intermediate files from the July–August 2026 session (see below).
+DCR calls, DCR frames and isoform models come from the protein-level (UniProtKB/Swiss-Prot isoform)
+mappings of that pipeline, not from GENCODE CDS annotation. The scripts write nothing inside DOOVER;
+all outputs go to `$WORK`.
 
 ## Layout
 
@@ -20,9 +21,9 @@ to `$WORK`.
 | `controls/` | splice-site phyloP; GTEx expression class / tissue specificity (tau) / brain dominance; GABBR1–PTBP2 ascertainment |
 | `figures/` | Figure 2B and Supplementary Figures S6–S9 (R, house style `dcr_style.R`) + their data-prep scripts |
 | `utils/` | pure-Python replica of `esl-translate -l 1 --watson` |
-| `results/` | small result tables (< 1 MB each) read by the figures; see `results/README.md` |
+| `results/` | result tables (< 1 MB each); see `results/README.md` |
 | `docs/` | methods/results notes written during the revision and the draft figure legends |
-| `archive_prior_session/` | **as executed, not refactored**: verbatim code cells of the July–August 2026 session (Tier A controls, v1/v2 selection test) |
+| `archive_prior_session/` | verbatim code cells of the July–August 2026 session (Tier A controls, v1/v2 selection test), kept as executed; they cannot be re-run as is |
 
 ## Quick start
 
@@ -30,19 +31,21 @@ to `$WORK`.
 conda env create -f Code/05_Revision/environment.yml && conda activate dcr-revision   # + R packages
 export DOOVER=/path/to/DOOVER                       # executed pipeline directory
 export REFDIR=/path/to/reference/data               # hg38.fa(+.fai), hg38.phyloP100way.bw, ...
-export PHYLOP_BW=/local/disk/hg38.phyloP100way.bw   # local copy! (see below)
+export PHYLOP_BW=/local/disk/hg38.phyloP100way.bw   # local copy (see below)
 export PRIOR_EXPORT=/path/to/exported/revision/artifacts   # selection-test intermediates
 export WORK=$PWD/revision_work
 Code/05_Revision/run_revision.sh                    # everything
 Code/05_Revision/run_revision.sh selection figure_inputs figures   # or a subset
 ```
 
-Every script also runs on its own with explicit arguments (`python <script> --help`); defaults are
-derived from `$DOOVER`, `$REFDIR` and `$WORK`.
+The Python scripts also run on their own with explicit arguments (`python <script> --help`), with
+defaults taken from `$DOOVER`, `$REFDIR` and `$WORK`.
 
-**phyloP bigWig.** `hg38.phyloP100way.bw` is 9.9 GB. Copy it to a local disk before running
-`splice_sites` or `splicing_vs_AS`: random reads over a cloud-synced drive ran at about 1.6 queries/s
-(≈ 11 h for the 64,064 splice sites), against ~10 s from a local SSD. The same applies to `hg38.fa`.
+### phyloP bigWig and hg38.fa
+
+`hg38.phyloP100way.bw` is 9.9 GB. Copy it, and `hg38.fa`, to a local disk before running
+`splice_sites` or `splicing_vs_AS`. Over a cloud-synced drive, random reads ran at about 1.6 queries/s,
+so the 64,064 splice sites took about 11 h; from a local SSD they take about 10 s.
 
 ## Steps (dependency order)
 
@@ -73,36 +76,43 @@ derived from `$DOOVER`, `$REFDIR` and `$WORK`.
 | Supplementary Figure S9 (splice sites, expression class, tissue specificity) | `figures/supp_splice_expression_tissue.R` | `Supp_splice_site_expression_tissue_specificity` |
 | Supplementary Figure S10 (DCRs vs ordinary alternative splicing) | `splicing_vs_AS/A2_figure.R` | `A2_FigureS_DCR_vs_regularAS` |
 
-Legends: `docs/figure_legends.md` (draft; Supplementary figure numbers assigned in the manuscript).
+Draft legends are in `docs/figure_legends.md`. They are not numbered there; the numbers in the table
+above are the manuscript's.
 
 ## The analyses
 
-**Alternate-frame selection test (v3), `selection/`.** OLGenie-style site classification
-(Nelson, Ardern & Wei 2020) of human–mouse differences in regions where two frames are both
+### Alternate-frame selection test (v3), `selection/`
+
+OLGenie-style site classification (Nelson, Ardern & Wei 2020) of human–mouse differences in regions where two frames are both
 complete: dNN/dNS and dSN/dSS for the alternate frame, dNN/dSN for the reference frame (positive
 control), pooled over intervals, Jukes–Cantor corrected, 2,000 bootstrap replicates over intervals.
 DCR arm: catalogue DCR intervals with both frames taken from the Swiss-Prot isoform models; null arm:
 latent dual-coding intervals in non-DCR coding exons (GENCODE v48 reference frame, open alternate
-frame). v3 reimplements the lost v2 code (reproduces v2: DCR arm exactly, null n 21,409 vs 21,340;
-`selection_v2_reproduction_check.csv`) and removes non-primary contigs from both arms. Headline
-(primary contigs): DCR n = 1,215, dSN/dSS = 0.443 (95% CI 0.372–0.522); null n = 19,948,
+frame). v3 reimplements the v2 code, which was lost. It reproduces v2 (the DCR arm exactly; null
+n 21,409 vs 21,340; `selection_v2_reproduction_check.csv`) and removes non-primary contigs from both
+arms. Main result (primary contigs): DCR n = 1,215, dSN/dSS = 0.443 (95% CI 0.372–0.522); null n = 19,948,
 dSN/dSS = 0.988. Details: `docs/selection_v3_methods.md`, `docs/OLGenie_methods_explained.md`.
 The 11 inputs are intermediates built by the archived session (`archive_prior_session/10_…`, `12_…`);
 `stage_selection_inputs.py` finds them in an exported-artifact folder and checks their md5.
 
-**DCRs vs ordinary alternative splicing, `splicing_vs_AS/`.** Atomic coding segments are derived
-from the Swiss-Prot isoform models (frame from the protein model itself) and classified as
-dual-coding, ordinary internal AS (frame-preserving or frame-shifting), constitutive or variable
-terminal; DCRs are compared with ordinary AS segments of DCR genes and of non-DCR genes for length,
-frame preservation, NMD (the pipeline's verbatim `analyze_isoforms()` rerun on all genes;
-validated against the pipeline's `NMDtable.tsv`), and phyloP conservation (length/GC- and
-inclusion-matched). Details: `docs/A2_results.md`.
+### DCRs vs ordinary alternative splicing, `splicing_vs_AS/`
 
-**Splice-site conservation, `controls/splice_site_phylop.py`.** Mean phyloP100way at the donor and
-acceptor sites flanking DCR exons vs control exons (the pipeline's splice-site beds), per junction ×
-site, Mann–Whitney U with rank-biserial effect size, Bonferroni-adjusted.
+`A2_build_events.py` derives atomic coding segments from the Swiss-Prot isoform models, taking the
+frame from the protein model itself, and classifies each as dual-coding, ordinary internal AS
+(frame-preserving or frame-shifting), constitutive or variable terminal. The later steps compare DCRs
+with the ordinary AS segments of DCR genes and of non-DCR genes for length, frame preservation, NMD,
+and phyloP conservation (matched for length/GC and for inclusion level). For NMD, `nmd_allgenes.py`
+reruns the pipeline's `analyze_isoforms()` verbatim on all genes; its calls were checked against the
+pipeline's `NMDtable.tsv`. Details: `docs/A2_results.md`.
 
-**Expression class and tissue specificity, `controls/gtex_fetch_medians.py` + `expression_tau.py`.**
+### Splice-site conservation, `controls/splice_site_phylop.py`
+
+The script compares mean phyloP100way at the donor and acceptor sites flanking DCR exons with control
+exons (the pipeline's splice-site beds), per junction × site, with Mann–Whitney U tests, rank-biserial
+effect sizes and Bonferroni correction.
+
+### Expression class and tissue specificity, `controls/gtex_fetch_medians.py` + `expression_tau.py`
+
 GTEx v8 median TPM in 54 tissue sites per gene (GENCODE v26 ids resolved from symbols; DCR genes vs
 all genes with mapped Swiss-Prot isoforms), DCR incidence per expression quintile (+ logistic
 regression), tau within quintiles, and the fraction of brain-dominant genes in DCR genes split by
@@ -110,25 +120,31 @@ mouse conservation. During the revision the GTEx data came through an in-platfor
 `gtex_fetch_medians.py` uses the public GTEx Portal API v2 instead (`--tie-break lowest`
 reproduces the connector's gene set exactly). Details: `docs/A4_results.md`.
 
-**GABBR1/PTBP2 ascertainment, `controls/gabbr1_ascertainment.py`.** Joins the selection-test
-exclusion fates to interval coordinates and lists the candidate showcase genes (GABBR1's 26-nt DCR
-falls below the 30-nt filter). Details: `docs/A3_results.md`.
+### GABBR1/PTBP2 ascertainment, `controls/gabbr1_ascertainment.py`
 
-**Figures, `figures/`.** House style in `dcr_style.R` (Helvetica, vector PDF via the base `pdf()`
+The script joins the selection-test exclusion fates to interval coordinates and lists the candidate
+example genes. GABBR1's 26-nt DCR falls below the 30-nt filter. Details: `docs/A3_results.md`.
+
+### Figures, `figures/`
+
+The lab's figure style is in `dcr_style.R` (Helvetica, vector PDF via the base `pdf()`
 device + 300-dpi PNG via ragg; fonts embedded with Ghostscript when available); `gene_model.R`
 draws Figure 2E-style gene models. `make_gc_tables.py` and `prep_gene_models.py` derive the per-exon
-GC tables and the GNAS/GABBR1 model tables from DOOVER; every figure writes the values it plotted
-(`*_plotted.csv` / `*_check.csv`) and asserts consistency with the summary tables.
+GC tables and the GNAS/GABBR1 model tables from DOOVER. Each figure script writes the values it plotted
+(`*_plotted.csv` / `*_check.csv`) and checks them against the summary tables.
 
-**Archived prior-session code, `archive_prior_session/`.** The Tier A GC audit, GC+length-matched
+### Archived prior-session code, `archive_prior_session/`
+
+The Tier A GC audit, GC+length-matched
 controls, DCR self-shuffle, phyloP with GC control, latent potential, GNAS, definition
 reconciliation, X/X′ conservation filter, annotation-depth check and the v1/v2 selection test ran as
-interactive cells in an earlier session. Their code is archived verbatim (paths anonymised), labelled
-"as executed, not refactored"; their result tables are in `results/`.
+interactive cells in an earlier session. Their code cells are archived verbatim, with paths anonymised.
+The cells cannot be re-run as is; their result tables are in `results/`.
 
 ## Reproduction status (smoke test, October 2026)
 
-Run from this layout against DOOVER, compared with the tables and figures used in the manuscript:
+We re-ran the steps from this layout against DOOVER and compared the outputs with the tables and
+figures used in the manuscript:
 
 | Step | Result of the re-run vs. the saved manuscript outputs |
 |---|---|
@@ -136,7 +152,7 @@ Run from this layout against DOOVER, compared with the tables and figures used i
 | `selection` | 5/5 tables byte-identical (`selection_omega_v3`, `_by_framerel_v3`, `_length_matched_v3`, `selection_v2_reproduction_check`, `selection_site_counts_v3`). Primary contigs: DCR n = 1,215, dSN/dSS = 0.443; null n = 19,948, dSN/dSS = 0.988 |
 | `ascertainment` | 2/2 tables byte-identical |
 | `splice_sites` | 2/2 tables byte-identical (64,064 sites, 64,032 with phyloP) |
-| `gtex_fetch` + `expression_tau` | public API run: 16,532 genes (1,230 DCR genes), same gene set and per-gene median/max/tau/top tissue as the connector data; 3/4 tables byte-identical, `A4_gene_expression_tau.csv` identical up to row order. Fed the connector JSON, all 4 are byte-identical |
+| `gtex_fetch` + `expression_tau` | public API run: 16,532 genes (1,230 DCR genes), same gene set and per-gene median/max/tau/top tissue as the connector data; 3/4 tables byte-identical, `A4_gene_expression_tau.csv` identical up to row order. With the connector JSON as input, all 4 are byte-identical |
 | `splicing_vs_AS` | 10/11 `A2_table_*.csv` and `A2_events.tsv`, `A2_events_annotated.csv`, `A2_matched_pairs.csv`, `segments.tsv`, `isoform_frames.tsv` byte-identical. `NMDtable_allgenes.tsv` differs for 42 isoforms, all in single-merged-exon genes whose call depends on gene order (documented in `docs/A2_results.md`; these genes are excluded from every comparison), so the 11th table, `A2_table_NMD_validation.csv`, reports `rerun_NMD` = 3,778 instead of 3,777 |
 | `figure_data` | 11/11 tables with a saved copy byte-identical (`gc_per_region_mouse.tsv` had none) |
 | `latent_check` | `latent_exon_fraction.csv` byte-identical |
@@ -144,10 +160,13 @@ Run from this layout against DOOVER, compared with the tables and figures used i
 
 ## Known limitations
 
-* The archive is a log, not a pipeline: it cannot be re-run as is.
-* The selection-test inputs are prior-session intermediates (not rebuilt from DOOVER by a script in
-  this directory); they are identified by md5 in `selection/selection_inputs_manifest.tsv`.
+* The archived cells cannot be re-run as is.
+* The selection-test inputs are prior-session intermediates. No script in this folder rebuilds them
+  from DOOVER; `selection/selection_inputs_manifest.tsv` identifies them by md5.
 * `gtex_fetch_medians.py` depends on the live GTEx Portal API; the result is identical to the
   connector-fetched values used for the manuscript as of October 2026 (`A4_gene_expression_tau.csv`
   differs only in row order).
-* Pre-existing issues of `Code/01–04` are not addressed here (see the PR description).
+* This folder does not fix three existing issues in `Code/01–04`: the master scripts call
+  `scripts/0X_…/` while the repository ships `Code/0X_…/`; `02_Conservation.sh` hardcodes
+  `~/Documents/liftOver`; and the archives ship under `Data/` while the scripts expect an extracted
+  `data/`.

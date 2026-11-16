@@ -1,12 +1,12 @@
-# archive_prior_session/ — code as executed, not refactored
+# archive_prior_session/: code cells as executed
 
 These files hold, verbatim and in execution order, the code cells of the July–August 2026 revision
 session that ran under a previous account (exported session `31323eb8_2026-09-16T22-37-01.json`,
 `frames[0].messages`, assistant `tool_use` blocks). They document how the Tier A controls and the
-v1/v2 selection test were computed. **They are not runnable scripts**: cells depend on kernel state
-from earlier cells, on files in that session's private workspace, and occasionally on the platform's
-artifact store. Only absolute paths were replaced by placeholders (`<OLD_WORKSPACE>`,
-`<OLD_ARTIFACT_STORE>/`, `<WHEELER_LAB_DRIVE>`, `<HOME>`); a credential scan found nothing to remove.
+v1/v2 selection test were computed. The cells cannot be run as scripts, because they depend on kernel
+state from earlier cells, on files in that session's private workspace, and occasionally on the
+platform's artifact store. We replaced only absolute paths, with placeholders (`<OLD_WORKSPACE>`,
+`<OLD_ARTIFACT_STORE>/`, `<WHEELER_LAB_DRIVE>`, `<HOME>`). A credential scan found nothing to remove.
 
 Cells that only read the reviewer letter, browsed directories or checked tool availability are kept so
 that the record is complete. Planning documents written with a file editor and save/plan bookkeeping

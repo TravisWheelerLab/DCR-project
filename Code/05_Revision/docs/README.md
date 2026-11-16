@@ -1,8 +1,8 @@
-# docs/ — notes written during the revision
+# docs/: notes written during the revision
 
-Methods and results notes as written while the analyses were run (October 2026), kept for
-provenance; numbers in them are the ones reported in the revised manuscript. Paths mentioned in
-them refer to the analysis machine, not to this repository layout.
+These methods and results notes were written while the analyses ran (October 2026) and are kept as a
+record. The numbers in them are the ones reported in the revised manuscript. Paths in them refer to
+the analysis machine, not to this repository.
 
 | File | Analysis |
 |---|---|
