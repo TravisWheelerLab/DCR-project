@@ -1,0 +1,6 @@
+cls,n,gc_median,gc_mean,gc_q25,gc_q75,len_median
+DCR_exon_human,3324,54.23,53.19,45.68,60.77,105
+nonDCR_exon_DCR_gene,21031,51.47,51.12,43.01,59.31,109
+nonDCR_exon_nonDCR_gene,286492,51.22,51.2,43.2,59.21,114
+mouse_DCR_ortholog,1603,53.49,52.96,46.77,59.32,64
+random_ctrl_mouse,100000,52.31,52.09,45.83,58.33,67

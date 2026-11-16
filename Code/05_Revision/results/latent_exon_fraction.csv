@@ -1,0 +1,9 @@
+orientation,cls,n,n_pass,pct,median_max_overlap
+genomic_plus,DCR_exon_human,3324,3256,97.95,79.0
+genomic_plus,nonDCR_exon_DCR_gene,21031,19674,93.55,77.0
+genomic_plus,nonDCR_exon_nonDCR_gene,286492,269256,93.98,78.0
+transcript,DCR_exon_human,3324,3260,98.07,86.0
+transcript,nonDCR_exon_DCR_gene,21031,19669,93.52,81.0
+transcript,nonDCR_exon_nonDCR_gene,286492,269398,94.03,83.0
+genomic_plus,nonDCR_all,307523,288930,93.95,
+transcript,nonDCR_all,307523,289067,94.0,

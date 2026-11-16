@@ -1,0 +1,46 @@
+# results/: result tables of the revision, as saved for the manuscript
+
+This folder holds copies (each < 1 MB) of the summary tables that the figure scripts read, and the main
+tables of each new analysis. `run_revision.sh figure_inputs` copies them to `$WORK/figure_inputs/` and
+then overwrites them with any table recomputed in `$WORK`, so the figure scripts use recomputed tables
+whenever they exist. No script in this folder regenerates the tables produced by the archived
+prior-session cells (`archive_prior_session/`); their committed copies are the reference.
+
+These larger tables are not committed; the steps regenerate them: `splice_site_phylop.tsv` (4.3 MB),
+`A4_gene_expression_tau.csv` (1.5 MB), `selection_site_counts_v3.csv` (11 MB), the A2 event tables
+(31–47 MB) and the per-exon GC table (18 MB).
+
+| File | Produced by | Used for |
+|---|---|---|
+| `A2_table_NMD_by_inclusion.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_NMD_counts.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_NMD_inclusion_adjusted.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_NMD_tests.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_NMD_validation.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_conservation.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_conservation_by_inclusion.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_conservation_inclusion_matched.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_descriptive.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_frame_preservation.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A2_table_length_tests.csv` | splicing_vs_AS/A2_stats.py | Fig S10 / docs/A2_results.md |
+| `A3_showcase_candidates.csv` | controls/gabbr1_ascertainment.py | Fig S6 legend / docs/A3_results.md |
+| `A4_brain_by_conservation.csv` | controls/expression_tau.py | Results (brain dominance by conservation stratum) |
+| `A4_dcr_by_expression.csv` | controls/expression_tau.py | Fig S9 B |
+| `A4_tau_by_expression.csv` | controls/expression_tau.py | Fig S9 C (tests) |
+| `Figure2B_values_plotted.csv` | figures/fig2B_potential_vs_selection.R | every number drawn in Fig 2B |
+| `Supp_GNAS_mouse_frames_plotted.csv` | figures/supp_GNAS_gene_model.R | Fig S7 B values |
+| `definition_reconciliation.csv` | archive 09_definition_reconciliation | Fig 2B(i) |
+| `gc_audit_summary.csv` | archive 02_tierA_gc_audit | Fig 2B(i) denominator; Fig S8 A-B check |
+| `gc_audit_tests.csv` | archive 02_tierA_gc_audit | Fig S8 A-B |
+| `gc_matched_fig2b.csv` | archive 03_gc_length_matched_controls | Fig S8 C |
+| `gnas_dcr_gt500.csv` | archive 07_gnas_dcr_gt500 | Fig S7 (consistency check) |
+| `latent_exon_fraction.csv` | figures/verify_latent_exon_fraction.py | check of Fig 2B(i), not plotted |
+| `phyloP_gc_control.csv` | archive 06_phyloP_gc_control | Fig S8 E |
+| `selection_by_framerel_v3.csv` | selection/selection_v3.py | Results / supplementary table |
+| `selection_interval_fates_with_coords.csv` | controls/gabbr1_ascertainment.py | Fig S6 legend / docs/A3_results.md |
+| `selection_length_matched_v3.csv` | selection/selection_v3.py | Results / supplementary table |
+| `selection_omega_v3.csv` | selection/selection_v3.py | Fig 2B(iii) |
+| `selection_v2_reproduction_check.csv` | selection/selection_v3.py | reproduction check (docs/selection_v3_methods.md) |
+| `self_shuffle_control.csv` | archive 04_dcr_self_shuffle | Fig S8 D |
+| `splice_site_conservation.csv` | controls/splice_site_phylop.py | Fig S9 A (tests) |
+| `xprime_summary.csv` | archive 10_xprime_conservation_filter | Fig 2B(i)-(ii) |

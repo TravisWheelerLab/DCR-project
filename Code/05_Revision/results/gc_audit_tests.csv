@@ -1,0 +1,4 @@
+group_A,group_B,median_A,median_B,median_diff,MWU_p,rank_biserial
+DCR_exon_human,nonDCR_exon_DCR_gene,54.23,51.47,2.76,6.59e-25,-0.111
+DCR_exon_human,nonDCR_exon_nonDCR_gene,54.23,51.22,3.01,5.63e-28,-0.11
+mouse_DCR_ortholog,random_ctrl_mouse,53.49,52.31,1.18,3.07e-05,-0.061
